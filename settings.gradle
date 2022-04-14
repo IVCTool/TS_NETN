@@ -9,3 +9,4 @@
 
 rootProject.name = 'TS_NETN'
 include('lib')
+include('ts-lib')

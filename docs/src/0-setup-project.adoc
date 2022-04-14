@@ -1,0 +1,87 @@
+= How to Setup you Project
+
+The very first step for each test suite development is to create a new project. In our case this will be Java project, with a gradle build setup and a git repository. For the following steps you need to have a Java development kit installed, as well as the git tools and the gradle build system.
+
+== Step One - Create a Java Library Repository
+
+Open a shell, create a folder and initialize the git repository and gradle build setup:
+
+[bash]
+----
+$ mkdir TS_YourProject
+$ git init .
+$ cd TS_YourProject
+$ gradle init
+
+Select type of project to generate:
+  1: basic
+  2: application
+  3: library
+  4: Gradle plugin
+Enter selection (default: basic) [1..4] 3
+
+Select implementation language:
+  1: C++
+  2: Groovy
+  3: Java
+  4: Kotlin
+  5: Scala
+  6: Swift
+Enter selection (default: Java) [1..6] 3
+
+Select build script DSL:
+  1: Groovy
+  2: Kotlin
+Enter selection (default: Groovy) [1..2] 1
+----
+
+Gradle will also ask you about your favorite Java unit testing framework and some other options depending on the version you are using. For the test suite the JUnit Jupiter framework was used and the default settings for the remaining options.
+
+For further information see the https://git-scm.com/book/en/v2[git] and the https://docs.gradle.org/current/samples/sample_building_java_applications.html[gradle documentation].
+
+== Step Two - Include the Dependencies to the IVCT Libraries
+
+A test suite is basically a collection of test cases according to the IVCT `AbstractTestCase` interface. The test case collection is defined `TestSuite` service interface, to be loaded by a https://docs.oracle.com/javase/7/docs/api/java/util/ServiceLoader.html[java.util.ServiceLoader] within the IVCT test engine. 
+
+Both interfaces are defined in the https://oss.sonatype.org/content/repositories/snapshots/io/github/msg134/TC.lib.if/[TC.lib.if] library, which must be added into the project dependencies. 
+
+[source]
+----
+<dependency>
+  <groupId>io.github.msg134</groupId>
+  <artifactId>TC.lib.if</artifactId>
+  <version>4.1.0-SNAPSHOT</version>
+  <type>module</type>
+</dependency>
+----
+
+In case you like to use the HLA run-time infrastructure, you may use the HLA implementation of the `AbstractTestCase` interface, which is 
+[source]
+----
+<dependency>
+  <groupId>io.github.msg134</groupId>
+  <artifactId>TC.lib</artifactId>
+  <version>4.1.0-SNAPSHOT</version>
+  <type>module</type>
+</dependency>
+----
+
+To find the SNAPSHOT libraries, your must add snapshot repositories into you `build.gradle` file, like this:
+[code]
+----
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots'
+    }
+}
+----
+
+== Step Three - Provide the ServiceLoader Configuration
+
+In order to make your test suite loadable by the ServiceLoader inside the IVCT framework, you need to provide a implementation of the `TestSuiteService` interface and the META-INF information for the build.
+
+ see https://docs.oracle.com/javase/9/docs/api/java/util/ServiceLoader.html[ServiceLoader] and also https://riptutorial.com/java/example/19523/simple-serviceloader-example[simple ServiceLoader example]
+
+ 
+

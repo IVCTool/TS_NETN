@@ -7,6 +7,9 @@
  * in the user manual at https://docs.gradle.org/7.3/userguide/multi_project_builds.html
  */
 
+
 rootProject.name = 'TS_NETN'
-include('lib')
-include('ts-lib')
+include('NETN-BASE')
+include('NETN-Physical')
+include('NETN-MRN')
+include('NETN-COM')

@@ -3,3 +3,6 @@ plugins {
     id 'netn.library-conventions'
 }
 
+test {
+    testLogging.showStandardStreams = false
+}

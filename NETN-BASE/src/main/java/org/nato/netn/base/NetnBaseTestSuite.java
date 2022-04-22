@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 public class NetnBaseTestSuite implements TestSuite {
 
+    public static final String TEST_SUITE_ID = "NETN-BASE-4_0";
+
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnBaseTestSuite.class);
 
     public NetnBaseTestSuite() {
@@ -24,5 +26,10 @@ public class NetnBaseTestSuite implements TestSuite {
         }
         log.trace("nothing found");
         return null;
+    }
+
+    @Override
+    public String getTestSuiteId() {
+        return TEST_SUITE_ID;
     }
 }

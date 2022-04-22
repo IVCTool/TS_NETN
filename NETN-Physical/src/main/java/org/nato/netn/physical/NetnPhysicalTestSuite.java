@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 public class NetnPhysicalTestSuite implements TestSuite {
 
+    public static final String TEST_SUITE_ID = "NETN-PHYSICAL-4_0";
+
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnPhysicalTestSuite.class);
 
     public NetnPhysicalTestSuite() {
@@ -24,5 +26,10 @@ public class NetnPhysicalTestSuite implements TestSuite {
         }
         log.trace("nothing found");
         return null;
+    }
+
+    @Override
+    public String getTestSuiteId() {
+        return TEST_SUITE_ID;
     }
 }

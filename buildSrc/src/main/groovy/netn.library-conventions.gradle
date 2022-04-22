@@ -3,26 +3,11 @@
 
 plugins {
     id 'java-library'
-    id 'maven-publish'
     id 'netn.java-conventions'
 }
 
-// Projects have the 'com.example' group by convention
 group = 'org.nato.netn'
-
-publishing {
-    publications {
-        library(MavenPublication) {
-            from components.java
-        }
-    }
-    repositories {
-        maven {
-            name "myOrgPrivateRepo"
-            url 'build/my-repo'
-        }
-    }
-}
+version = '0.0.1'
 
 test {
 	useJUnitPlatform()
@@ -33,10 +18,10 @@ test {
 
 dependencies {
     // IVCT AbstractTestCase interface
-    compileOnly 'io.github.msg134:TC.lib.if:4.1.0-SNAPSHOT'
-    compileOnly 'io.github.msg134:TC.lib:4.1.0-SNAPSHOT'
+    api 'io.github.msg134:TC.lib.if:4.1.0-SNAPSHOT'
+    api 'io.github.msg134:TC.lib:4.1.0-SNAPSHOT'
     // Use Simple Logging Facade API for reporting
-    compileOnly 'org.slf4j:slf4j-api:1.7.10'
+    api 'org.slf4j:slf4j-api:1.7.10'
 
     // For testing include the libraries which are added by TestEngine in operation
     testImplementation 'io.github.msg134:TC.lib:4.1.0-SNAPSHOT'

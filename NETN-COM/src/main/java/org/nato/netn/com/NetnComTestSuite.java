@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 
 public class NetnComTestSuite implements TestSuite {
 
-    public static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnComTestSuite.class);
+    public static final String TEST_SUITE_ID = "NETN-COM-4_0";
+
+    static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnComTestSuite.class);
 
     public NetnComTestSuite() {
         super();
@@ -24,5 +26,10 @@ public class NetnComTestSuite implements TestSuite {
         }
         log.trace("nothing found");
         return null;
+    }
+
+    @Override
+    public String getTestSuiteId() {
+        return TEST_SUITE_ID;
     }
 }

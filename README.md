@@ -8,7 +8,7 @@ This repository will be used for the development of the NETN Test Suite. Current
 
 The current test suite design uses the ServiceLoader interface feature of the IVCT framework. This is only available in the latest snapshot releases and not yet included in the production release. 
 
-## The NETN FOM
+## NETN FOM
 
 This test suite verify the NATO Education and Training Network (NETN) Federation Object Model (FOM). 
 See also https://github.com/AMSP-04/NETN-FOM

@@ -2,17 +2,21 @@
 package org.nato.netn.com;
 
 import de.fraunhofer.iosb.tc_lib_if.AbstractTestCaseIf;
-import de.fraunhofer.iosb.tc_lib_if.TestSuite;
+import de.fraunhofer.iosb.tc_lib.HlaTestSuite;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import org.json.simple.parser.ParseException;
 import org.slf4j.LoggerFactory;
 
-public class NetnComTestSuite implements TestSuite {
+public class NetnComTestSuite extends HlaTestSuite {
 
     public static final String TEST_SUITE_ID = "NETN-COM-4_0";
 
     static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnComTestSuite.class);
 
-    public NetnComTestSuite() {
+    public NetnComTestSuite() throws FileNotFoundException, IOException, ParseException {
         super();
         log.trace("Test Suite {} loading", NetnComTestSuite.class);
     }
@@ -28,8 +32,4 @@ public class NetnComTestSuite implements TestSuite {
         return null;
     }
 
-    @Override
-    public String getTestSuiteId() {
-        return TEST_SUITE_ID;
-    }
 }

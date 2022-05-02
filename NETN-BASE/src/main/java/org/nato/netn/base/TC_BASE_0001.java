@@ -24,19 +24,27 @@ public class TC_BASE_0001 extends AbstractTestCase {
 
     @Override
     protected void preambleAction(Logger logger) throws TcInconclusiveIf {
-        // TODO Auto-generated method stub
+        logger.info("TC_BASE_0001 preamble");
+
+        // TODO establish precondition for testing
         
     }
 
     @Override
     protected void performTest(Logger logger) throws TcInconclusiveIf, TcFailedIf {
-        // TODO Auto-generated method stub
+        logger.info("TC_BASE_0001 test case started");
+
+        // TODO implement the test logic here
+        // throw new TcInconclusiveIf("no test case implementation");
         
+        logger.info("TC_BASE_0001 test case passed");
     }
 
     @Override
     protected void postambleAction(Logger logger) throws TcInconclusiveIf {
-        // TODO Auto-generated method stub
+        logger.info("TC_BASE_0001 postamble");
+
+        // TODO clean up test artefacts after finished test
         
     }
     

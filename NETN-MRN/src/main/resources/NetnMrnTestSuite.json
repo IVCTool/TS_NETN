@@ -1,10 +1,10 @@
 {
     "id": "NETN-MRN-4_0",
-    "version": "0.0.1-SNAPSHOT",
-    "name": "NETN-BASE 4.0 Test Suite",
+    "version": "4.0-SNAPSHOT",
+    "name": "NETN-MRN 4.0 Test Suite",
     "description": "Collection of NETN-MRN test cases",
-    "tsRunTimeFolder": "TS-NETN-4_0-0.0.1-SNAPSHOT/bin",
-    "tsLibTimeFolder": "TS-NETN-4_0-0.0.1-SNAPSHOT/lib",
+    "tsRunTimeFolder": "NETN-MRN-4.0-SNAPSHOT",
+    "tsLibTimeFolder": "NETN-MRN-4.0-SNAPSHOT/lib",
     "testcases": [
         {
             "TC": "org.nato.netn.mrn.TC_MRN_0001",

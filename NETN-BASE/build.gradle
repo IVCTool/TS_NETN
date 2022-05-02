@@ -6,3 +6,4 @@ plugins {
 test {
     testLogging.showStandardStreams = false
 }
+

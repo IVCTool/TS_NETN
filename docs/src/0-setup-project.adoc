@@ -1,4 +1,4 @@
-= How to Setup you Project
+= How to Setup your Project
 
 The very first step for each test suite development is to create a new project. In our case this will be Java project, with a gradle build setup and a git repository. For the following steps you need to have a Java development kit installed, as well as the git tools and the gradle build system.
 
@@ -83,5 +83,5 @@ In order to make your test suite loadable by the ServiceLoader inside the IVCT f
 
  see https://docs.oracle.com/javase/9/docs/api/java/util/ServiceLoader.html[ServiceLoader] and also https://riptutorial.com/java/example/19523/simple-serviceloader-example[simple ServiceLoader example]
 
- 
+The ServiceLoader API for loading test cases is defined in the `IVCT:TC.lib.if` library. A generic implementation for HLA test cases is provided in the `IVCT:TC.lib library`. This implementation provides the code for loading test suites based on JSON description files and JSON parameter templates. 
 

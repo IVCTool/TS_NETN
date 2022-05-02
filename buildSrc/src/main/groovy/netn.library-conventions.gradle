@@ -3,11 +3,12 @@
 
 plugins {
     id 'java-library'
+    id 'java-library-distribution'
     id 'netn.java-conventions'
 }
 
 group = 'org.nato.netn'
-version = '0.0.1'
+version = '4.0-SNAPSHOT'
 
 test {
 	useJUnitPlatform()
@@ -16,10 +17,21 @@ test {
 	}
 }
 
+task dockerBuildImage (type: Exec) {
+	group = 'Docker'
+	description = 'command line task to create docker image'
+	executable 'docker'
+	args 'build', '-t', "nato/${project.name.toLowerCase()}:${version}", 
+        '--build-arg', "version=${version}", 
+        '--build-arg', "name=${project.name}", 
+        '.'
+	dependsOn('distTar')
+}
+
 dependencies {
     // IVCT AbstractTestCase interface
     api 'io.github.msg134:TC.lib.if:4.1.0-SNAPSHOT'
-    api 'io.github.msg134:TC.lib:4.1.0-SNAPSHOT'
+    implementation 'io.github.msg134:TC.lib:4.1.0-SNAPSHOT'
     // Use Simple Logging Facade API for reporting
     api 'org.slf4j:slf4j-api:1.7.10'
     api 'com.googlecode.json-simple:json-simple:1.1.1'

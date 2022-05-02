@@ -1,10 +1,10 @@
 {
     "id": "NETN-PHYSICAL-4_0",
-    "version": "0.0.1-SNAPSHOT",
-    "name": "NETN-BASE 4.0 Test Suite",
+    "version": "4.0-SNAPSHOT",
+    "name": "NETN-PHYSICAL 4.0 Test Suite",
     "description": "Collection of NETN-PHYSICAL test cases",
-    "tsRunTimeFolder": "TS-NETN-4_0-0.0.1-SNAPSHOT/bin",
-    "tsLibTimeFolder": "TS-NETN-4_0-0.0.1-SNAPSHOT/lib",
+    "tsRunTimeFolder": "NETN-PHYSICAL-4.0-SNAPSHOT",
+    "tsLibTimeFolder": "NETN-PHYSICAL-4.0-SNAPSHOT/lib",
     "testcases": [
         {
             "TC": "org.nato.netn.physical.TC_PHYSICAL_0001",

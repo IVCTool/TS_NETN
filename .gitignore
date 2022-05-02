@@ -10,3 +10,9 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/*.code-snippets
+
+# temporary build files
+bin
+logs
+build
+target

@@ -13,6 +13,13 @@ The current test suite design uses the ServiceLoader interface feature of the IV
 This test suite verify the NATO Education and Training Network (NETN) Federation Object Model (FOM). 
 See also https://github.com/AMSP-04/NETN-FOM
 
+## Test Suite Structure
+
+The test suites modules are aligned to the badge structure. 
+
+![Badges](docs/src/badge-dependencies.png)
+
+
 ## LICENCE
 
 Copyright 2022 NATO/OTAN

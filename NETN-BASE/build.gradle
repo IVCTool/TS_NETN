@@ -4,6 +4,6 @@ plugins {
 }
 
 test {
-    testLogging.showStandardStreams = false
+    testLogging.showStandardStreams = true
 }
 

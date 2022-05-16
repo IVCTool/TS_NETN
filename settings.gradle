@@ -10,6 +10,6 @@
 
 rootProject.name = 'TS_NETN'
 include('NETN-BASE')
-include('NETN-Physical')
-include('NETN-MRN')
-include('NETN-COM')
+include('NETN-PLATFORM')
+include('NETN-TASKING')
+include('NETN-UNIT')

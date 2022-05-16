@@ -1,0 +1,21 @@
+{
+    "id": "NETN-TASKING-4_0",
+    "version": "4.0-SNAPSHOT",
+    "name": "NETN-TASKING 4.0 Test Suite",
+    "description": "Collection of NETN-TASKING test cases",
+    "tsRunTimeFolder": "NETN-TASKING-4.0-SNAPSHOT",
+    "tsLibTimeFolder": "NETN-TASKING-4.0-SNAPSHOT/lib",
+    "testcases": [
+        {
+            "TC": "org.nato.netn.tasking.TC_TASKING_0001",
+            "IR": ["NETN-BASE-0001"],
+            "description": "Abstract test case description"
+        }
+    ],
+	"parameters":[
+		{
+			"name": "p1",
+			"description": "placeholder for future use"
+		}
+	]
+}

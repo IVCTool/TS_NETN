@@ -1,0 +1,21 @@
+{
+    "id": "NETN-PLATFORM-4_0",
+    "version": "4.0-SNAPSHOT",
+    "name": "NETN-PLATFORM 4.0 Test Suite",
+    "description": "Collection of NETN-PLATFORM test cases",
+    "tsRunTimeFolder": "NETN-PLATFORM-4.0-SNAPSHOT",
+    "tsLibTimeFolder": "NETN-PLATFORM-4.0-SNAPSHOT/lib",
+    "testcases": [
+        {
+            "TC": "org.nato.netn.platform.TC_PLATFORM_0001",
+            "IR": ["NETN-BASE-0001"],
+            "description": "Abstract test case description"
+        }
+    ],
+	"parameters":[
+		{
+			"name": "p1",
+			"description": "placeholder for future use"
+		}
+	]
+}

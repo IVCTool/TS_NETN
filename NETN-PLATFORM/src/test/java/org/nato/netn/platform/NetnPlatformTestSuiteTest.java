@@ -27,7 +27,7 @@ public class NetnPlatformTestSuiteTest {
     void testTestCaseLoader() throws FileNotFoundException, IOException, ParseException {
         log.trace("ServiceLoader test");
         NetnPlatformTestSuite ts = new NetnPlatformTestSuite();
-        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.physical.TC_Physical_0001");
+        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.platform.TC_Platform_0001");
         assertNotNull(tc, "defined test case must be found");
     }
 

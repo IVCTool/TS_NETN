@@ -25,7 +25,7 @@ public class NetnTaskingTestSuiteTest {
     void testTestCaseLoader() throws FileNotFoundException, IOException, ParseException {
         log.trace("ServiceLoader test");
         NetnTaskingTestSuite ts = new NetnTaskingTestSuite();
-        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.com.TC_COM_0001");
+        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.tasking.TC_TASKING_0001");
         assertNotNull(tc);
     }
 

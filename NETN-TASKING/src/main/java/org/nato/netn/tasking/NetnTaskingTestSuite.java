@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public class NetnTaskingTestSuite extends HlaTestSuite {
 
-    public static final String TEST_SUITE_ID = "NETN-COM-4_0";
+    public static final String TEST_SUITE_ID = "NETN-TASKING-4_0";
 
     static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnTaskingTestSuite.class);
 
@@ -24,9 +24,9 @@ public class NetnTaskingTestSuite extends HlaTestSuite {
     @Override
     public AbstractTestCaseIf getTestCase(String testCaseId) {
         log.trace("got test case id {} to find", testCaseId);
-        if (testCaseId.equals(TC_COM_0001.class.getName())) {
+        if (testCaseId.equals(TC_TASKING_0001.class.getName())) {
             log.trace("found it");
-            return new TC_COM_0001();
+            return new TC_TASKING_0001();
         }
         log.trace("nothing found");
         return null;

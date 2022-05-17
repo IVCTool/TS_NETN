@@ -7,7 +7,7 @@ public class NetnRefFed {
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnRefFed.class);
     
     private boolean running = false;
-    private int duration = 9000;
+    private int duration = 2000;
     private int interval = 1000;
     
     @Test

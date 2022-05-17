@@ -31,7 +31,7 @@ public class TC_BASE_0001Test {
         
         log.info("test case started");
         // tc.execute(log);
-        int duration = 8000;
+        int duration = 1000;
         int interval = 800;
         while (duration > 0) {
             Thread.sleep(interval);

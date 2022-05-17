@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public class NetnUnitTestSuite extends HlaTestSuite {
 
-    public static final String TEST_SUITE_ID = "NETN-MRN-4_0";
+    public static final String TEST_SUITE_ID = "NETN-UNIT-4_0";
 
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnUnitTestSuite.class);
 

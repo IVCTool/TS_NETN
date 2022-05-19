@@ -14,30 +14,34 @@ import de.fraunhofer.iosb.tc_lib_if.TcInconclusiveIf;
 public class TC_BASE_0001Test {
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(TC_BASE_0001Test.class);
 
+    protected static String tcParamJson = "{ " +
+        "    \"p1\" : \"1.0003\", " +
+        "    \"fomFiles\": [ " +
+                "\"../foms/TS-NETN-v4.0.xml\", " +
+                "\"../foms/RPR-FOM-v2.0/RPR-Base_v2.0.xml\", " +
+                "\"../foms/NETN-FOM-v4.0/NETN-BASE.xml\"] " +
+        "}";
+
+
     @Test
     void testGetIVCT_BaseModel() {
 
     }
 
     @Test
-    public void execute() throws InterruptedException {
+    public void execute() {
         TC_BASE_0001 tc = new TC_BASE_0001();
-        tc.setFederationName("federationName");
+        tc.setFederationName("NETN-Test-Federation");
         tc.setSettingsDesignator("settingsDesignator");
-        tc.setSutFederateName("sutFederateName");
+        tc.setSutFederateName("TC_BASE_0001");
         tc.setSutName("sutName");
-        tc.setTcParam("param");
+        tc.setTcParam(tcParamJson);
         tc.setTsName("testSuiteId");
-        
+
+        tc.setSkipOperatorMsg(true);
+
         log.info("test case started");
-        // tc.execute(log);
-        int duration = 1000;
-        int interval = 800;
-        while (duration > 0) {
-            Thread.sleep(interval);
-            duration -= interval;
-            log.info("testing - remaining time {} ms", duration);
-        }
+        tc.execute(log);
         log.info("test case finished");
 
     }
@@ -59,22 +63,30 @@ public class TC_BASE_0001Test {
             fail("test case shall not be inconclusive: {}", e);
         }
     }
+    
+    @Test
+    void testPreambleAction() {
+        TC_BASE_0001 tc = new TC_BASE_0001();
+        tc.setFederationName("NETN-Test-Federation");
+        tc.setSettingsDesignator("settingsDesignator");
+        tc.setSutFederateName("TC_BASE_0001");
+        tc.setSutName("sutName");
+        tc.setTcParam(tcParamJson);
+        tc.setTsName("testSuiteId");
 
+        tc.setSkipOperatorMsg(true);
+        try {
+            tc.preambleAction(log);
+        } catch (TcInconclusiveIf e) {
+            fail("test case shall not be inconclusive: {}", e);
+        }
+    }
+    
     @Test
     void testPostambleAction() {
         TC_BASE_0001 tc = new TC_BASE_0001();
         try {
             tc.postambleAction(log);
-        } catch (TcInconclusiveIf e) {
-            fail("test case shall not be inconclusive: {}", e);
-        }
-    }
-
-    @Test
-    void testPreambleAction() {
-        TC_BASE_0001 tc = new TC_BASE_0001();
-        try {
-            tc.preambleAction(log);
         } catch (TcInconclusiveIf e) {
             fail("test case shall not be inconclusive: {}", e);
         }

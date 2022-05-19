@@ -7,3 +7,11 @@ test {
     testLogging.showStandardStreams = true
 }
 
+distributions {
+    main {
+        contents {
+            from "${project.rootDir}/foms/RPR-FOM-v2.0/RPR-Base_v2.0.xml"
+            from "${project.rootDir}/foms/NETN-FOM-v4.0/NETN-BASE.xml"
+        }
+    }
+}

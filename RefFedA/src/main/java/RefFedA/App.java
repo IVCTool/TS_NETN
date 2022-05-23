@@ -3,12 +3,87 @@
  */
 package RefFedA;
 
-public class App {
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import de.fraunhofer.iosb.tc_lib.IVCT_LoggingFederateAmbassador;
+import de.fraunhofer.iosb.tc_lib.IVCT_NullFederateAmbassador;
+import de.fraunhofer.iosb.tc_lib.IVCT_RTIambassador;
+import hla.rti1516e.CallbackModel;
+import hla.rti1516e.RTIambassador;
+import hla.rti1516e.RtiFactory;
+import hla.rti1516e.RtiFactoryFactory;
+import hla.rti1516e.exceptions.AlreadyConnected;
+import hla.rti1516e.exceptions.CallNotAllowedFromWithinCallback;
+import hla.rti1516e.exceptions.ConnectionFailed;
+import hla.rti1516e.exceptions.CouldNotCreateLogicalTimeFactory;
+import hla.rti1516e.exceptions.CouldNotOpenFDD;
+import hla.rti1516e.exceptions.ErrorReadingFDD;
+import hla.rti1516e.exceptions.FederateAlreadyExecutionMember;
+import hla.rti1516e.exceptions.FederationExecutionAlreadyExists;
+import hla.rti1516e.exceptions.FederationExecutionDoesNotExist;
+import hla.rti1516e.exceptions.InconsistentFDD;
+import hla.rti1516e.exceptions.InvalidLocalSettingsDesignator;
+import hla.rti1516e.exceptions.NotConnected;
+import hla.rti1516e.exceptions.RTIinternalError;
+import hla.rti1516e.exceptions.RestoreInProgress;
+import hla.rti1516e.exceptions.SaveInProgress;
+import hla.rti1516e.exceptions.UnsupportedCallbackModel;
+
+public class App extends IVCT_NullFederateAmbassador{
+
+    private static String FEDERATION_NAME = "NETN-Testbed";
+    private static String FEDERATE_NAME = "RefFedA";
+    private static String FEDERATE_TYPE = "RefFed";
+    
+    public static final org.slf4j.Logger log = LoggerFactory.getLogger(App.class);
+    private RTIambassador rtiAmbassador;
+    private IVCT_LoggingFederateAmbassador loggingFederateAmbassador;
+
+    public App(Logger logger) throws RTIinternalError {
+        super(logger);
+        RtiFactory rtiFactory = RtiFactoryFactory.getRtiFactory();
+        rtiAmbassador = new IVCT_RTIambassador (rtiFactory.getRtiAmbassador(), rtiFactory.getEncoderFactory(),log);
+        loggingFederateAmbassador = new IVCT_LoggingFederateAmbassador(this, log);
+    }
+    
+    private void connectToRti() throws InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, NotConnected, RTIinternalError, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected {
+        File fddFile = new File ("RefFedA/TS-NETN-v4.0.xml");
+        rtiAmbassador.connect(loggingFederateAmbassador, CallbackModel.HLA_EVOKED);
+        try {
+            rtiAmbassador.createFederationExecution(FEDERATE_NAME, fddFile.toURI().toURL());
+        } catch (FederationExecutionAlreadyExists ignored) {
+        }
+        rtiAmbassador.joinFederationExecution(FEDERATE_TYPE, FEDERATE_NAME);
+    }
+    
     public String getGreeting() {
         return "Hello World!";
     }
 
-    public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+    public static void main(String[] args) throws RTIinternalError, InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, FederationExecutionAlreadyExists, NotConnected, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected {
+
+        log.info("staring NETN reference federate A");
+        App fed = new App(log);
+        fed.connectToRti();
+
+        // TODO implement the test logic here
+        int duration = 8000;
+        int interval = 800;
+        while (duration > 0) {
+            try {
+                Thread.sleep(interval);
+            } catch (InterruptedException e) {
+                return;
+            }
+            duration -= interval;
+            log.info("testing - remaining time {} ms", duration);
+        }
+
+        log.info("terminate NETN reference federate A");
     }
 }

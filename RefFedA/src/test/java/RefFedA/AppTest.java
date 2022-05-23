@@ -3,12 +3,26 @@
  */
 package RefFedA;
 
+
 import org.junit.jupiter.api.Test;
+
+import org.slf4j.LoggerFactory;
+
+import hla.rti1516e.exceptions.RTIinternalError;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppTest {
+
+    public static final org.slf4j.Logger log = LoggerFactory.getLogger(AppTest.class);
+
     @Test void appHasAGreeting() {
-        App classUnderTest = new App();
+        App classUnderTest = null;
+        try {
+            classUnderTest = new App(log);
+        } catch (RTIinternalError e) {
+            fail(e);
+        }
         assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
     }
 }

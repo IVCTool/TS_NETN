@@ -15,3 +15,21 @@ repositories {
         url 'https://oss.sonatype.org/content/repositories/snapshots'
     }
 }
+
+dependencies {
+    // IVCT AbstractTestCase interface
+    implementation 'io.github.msg134:TC.lib:4.1.0-SNAPSHOT'
+    // Use Simple Logging Facade API for reporting
+    implementation 'org.slf4j:slf4j-api:1.7.10'
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+	implementation files("$System.env.LRC_CLASSPATH")
+
+    // For testing include the libraries which are added by TestEngine in operation
+    testImplementation 'io.github.msg134:TC.lib:4.1.0-SNAPSHOT'
+    testImplementation 'org.slf4j:slf4j-api:1.7.10'
+    testImplementation 'ch.qos.logback:logback-classic:1.2.11'
+    
+    // Use JUnit Jupiter for testing.
+	testImplementation(platform('org.junit:junit-bom:5.8.2'))
+	testImplementation('org.junit.jupiter:junit-jupiter')
+}

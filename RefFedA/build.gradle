@@ -21,3 +21,8 @@ tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
+
+dependencies {
+    implementation 'ch.qos.logback:logback-classic:1.2.11'
+
+}

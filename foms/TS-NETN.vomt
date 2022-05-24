@@ -105,6 +105,12 @@
       <void method="add">
        <int>2</int>
       </void>
+      <void method="add">
+       <int>4</int>
+      </void>
+      <void method="add">
+       <int>5</int>
+      </void>
      </object>
      <boolean>false</boolean>
      <boolean>false</boolean>
@@ -112,6 +118,84 @@
       <int>204</int>
       <int>235</int>
       <int>197</int>
+      <int>255</int>
+     </object>
+    </object>
+   </void>
+   <void method="add">
+    <object class="se.pitch.vomt2.model.PersistentProjectHelper$PersistentModule" id="PersistentProjectHelper$PersistentModule4">
+     <string>NETN-MRM</string>
+     <string>NETN-FOM-v4.0\NETN-MRM.xml</string>
+     <boolean>true</boolean>
+     <boolean>false</boolean>
+     <boolean>true</boolean>
+     <boolean>true</boolean>
+     <object class="java.util.ArrayList">
+      <void method="add">
+       <int>0</int>
+      </void>
+      <void method="add">
+       <int>2</int>
+      </void>
+      <void method="add">
+       <int>5</int>
+      </void>
+      <void method="add">
+       <int>1</int>
+      </void>
+     </object>
+     <boolean>false</boolean>
+     <boolean>false</boolean>
+     <object class="java.awt.Color">
+      <int>141</int>
+      <int>211</int>
+      <int>199</int>
+      <int>255</int>
+     </object>
+    </object>
+   </void>
+   <void method="add">
+    <object class="se.pitch.vomt2.model.PersistentProjectHelper$PersistentModule" id="PersistentProjectHelper$PersistentModule5">
+     <string>RPR-Aggregate_v2.0</string>
+     <string>RPR-FOM-v2.0\RPR-Aggregate_v2.0.xml</string>
+     <boolean>true</boolean>
+     <boolean>false</boolean>
+     <boolean>true</boolean>
+     <boolean>true</boolean>
+     <object class="java.util.ArrayList">
+      <void method="add">
+       <int>0</int>
+      </void>
+     </object>
+     <boolean>false</boolean>
+     <boolean>false</boolean>
+     <object class="java.awt.Color">
+      <int>251</int>
+      <int>128</int>
+      <int>114</int>
+      <int>255</int>
+     </object>
+    </object>
+   </void>
+   <void method="add">
+    <object class="se.pitch.vomt2.model.PersistentProjectHelper$PersistentModule">
+     <string>RPR-Enumerations_v2.0</string>
+     <string>RPR-FOM-v2.0\RPR-Enumerations_v2.0.xml</string>
+     <boolean>true</boolean>
+     <boolean>false</boolean>
+     <boolean>true</boolean>
+     <boolean>true</boolean>
+     <object class="java.util.ArrayList">
+      <void method="add">
+       <int>0</int>
+      </void>
+     </object>
+     <boolean>false</boolean>
+     <boolean>false</boolean>
+     <object class="java.awt.Color">
+      <int>211</int>
+      <int>207</int>
+      <int>238</int>
       <int>255</int>
      </object>
     </object>
@@ -125,46 +209,17 @@
    <void method="add">
     <object class="se.pitch.vomt2.model.PersistentProjectHelper$PersistentView">
      <boolean>true</boolean>
-     <object class="java.lang.Enum" id="TableType0" method="valueOf">
-      <class>se.pitch.vomt2.model.TableType</class>
-      <string>OBJECT_CLASS_TABLE</string>
-     </object>
-     <object idref="PersistentProjectHelper$PersistentModule1"/>
-     <int>5</int>
-     <int>105</int>
-     <int>640</int>
-     <int>607</int>
-     <object class="java.util.LinkedHashSet"/>
-     <object class="java.util.Collections" id="Collections$EmptySet0" method="emptySet"/>
-    </object>
-   </void>
-   <void method="add">
-    <object class="se.pitch.vomt2.model.PersistentProjectHelper$PersistentView">
-     <boolean>true</boolean>
      <object class="java.lang.Enum" method="valueOf">
       <class>se.pitch.vomt2.model.TableType</class>
-      <string>IDENTIFICATION_TABLE</string>
+      <string>INTERACTION_CLASS_TABLE</string>
      </object>
-     <object idref="PersistentProjectHelper$PersistentModule2"/>
-     <int>5</int>
-     <int>125</int>
-     <int>640</int>
-     <int>587</int>
-     <object idref="Collections$EmptySet0"/>
-     <object idref="Collections$EmptySet0"/>
-    </object>
-   </void>
-   <void method="add">
-    <object class="se.pitch.vomt2.model.PersistentProjectHelper$PersistentView">
-     <boolean>true</boolean>
-     <object idref="TableType0"/>
      <object idref="PersistentProjectHelper$PersistentModule3"/>
-     <int>314</int>
-     <int>13</int>
+     <int>174</int>
+     <int>0</int>
      <int>1062</int>
      <int>717</int>
+     <object class="java.util.Collections" method="emptySet"/>
      <object class="java.util.LinkedHashSet"/>
-     <object idref="Collections$EmptySet0"/>
     </object>
    </void>
   </object>
@@ -177,6 +232,15 @@
    </void>
    <void method="add">
     <object idref="PersistentProjectHelper$PersistentModule2"/>
+   </void>
+   <void method="add">
+    <object idref="PersistentProjectHelper$PersistentModule3"/>
+   </void>
+   <void method="add">
+    <object idref="PersistentProjectHelper$PersistentModule4"/>
+   </void>
+   <void method="add">
+    <object idref="PersistentProjectHelper$PersistentModule5"/>
    </void>
   </object>
   <boolean>false</boolean>

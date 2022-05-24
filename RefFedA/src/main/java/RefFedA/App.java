@@ -6,6 +6,7 @@ package RefFedA;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +25,15 @@ import hla.rti1516e.exceptions.CouldNotCreateLogicalTimeFactory;
 import hla.rti1516e.exceptions.CouldNotOpenFDD;
 import hla.rti1516e.exceptions.ErrorReadingFDD;
 import hla.rti1516e.exceptions.FederateAlreadyExecutionMember;
+import hla.rti1516e.exceptions.FederateNameAlreadyInUse;
+import hla.rti1516e.exceptions.FederateNotExecutionMember;
 import hla.rti1516e.exceptions.FederationExecutionAlreadyExists;
 import hla.rti1516e.exceptions.FederationExecutionDoesNotExist;
 import hla.rti1516e.exceptions.InconsistentFDD;
+import hla.rti1516e.exceptions.InteractionClassNotDefined;
+import hla.rti1516e.exceptions.InvalidInteractionClassHandle;
 import hla.rti1516e.exceptions.InvalidLocalSettingsDesignator;
+import hla.rti1516e.exceptions.NameNotFound;
 import hla.rti1516e.exceptions.NotConnected;
 import hla.rti1516e.exceptions.RTIinternalError;
 import hla.rti1516e.exceptions.RestoreInProgress;
@@ -36,13 +42,14 @@ import hla.rti1516e.exceptions.UnsupportedCallbackModel;
 
 public class App extends IVCT_NullFederateAmbassador{
 
-    private static String FEDERATION_NAME = "NETN-Testbed";
+    private static String FEDERATION_NAME = "NETN-Test-Federation";
     private static String FEDERATE_NAME = "RefFedA";
     private static String FEDERATE_TYPE = "RefFed";
     
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(App.class);
     private RTIambassador rtiAmbassador;
     private IVCT_LoggingFederateAmbassador loggingFederateAmbassador;
+    private Interaction aggregate;
 
     public App(Logger logger) throws RTIinternalError {
         super(logger);
@@ -51,25 +58,36 @@ public class App extends IVCT_NullFederateAmbassador{
         loggingFederateAmbassador = new IVCT_LoggingFederateAmbassador(this, log);
     }
     
-    private void connectToRti() throws InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, NotConnected, RTIinternalError, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected {
-        File fddFile = new File ("RefFedA/TS-NETN-v4.0.xml");
+    private void connectToRti() throws InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, NotConnected, RTIinternalError, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected, FederateNameAlreadyInUse {
+        File fddFile = new File ("foms/TS-NETN-v4.0.xml");
+        ArrayList<URL> foms = new ArrayList<>();
+        foms.add(new File("foms/RPR-FOM-v2.0/RPR-Base_v2.0.xml").toURI().toURL());
+        foms.add(new File("foms/RPR-FOM-v2.0/RPR-Aggregate_v2.0.xml").toURI().toURL());
+        foms.add(new File("foms/NETN-FOM-v4.0/NETN-BASE.xml").toURI().toURL());
+        foms.add(new File("foms/NETN-FOM-v4.0/NETN-MRM.xml").toURI().toURL());
+        foms.add(new File("foms/TS-NETN-v4.0.xml").toURI().toURL());
+
         rtiAmbassador.connect(loggingFederateAmbassador, CallbackModel.HLA_EVOKED);
         try {
-            rtiAmbassador.createFederationExecution(FEDERATE_NAME, fddFile.toURI().toURL());
+            //rtiAmbassador.createFederationExecution(FEDERATION_NAME, fddFile.toURI().toURL());
+            rtiAmbassador.createFederationExecution(FEDERATION_NAME, foms.toArray(new URL[foms.size()]));
         } catch (FederationExecutionAlreadyExists ignored) {
         }
-        rtiAmbassador.joinFederationExecution(FEDERATE_TYPE, FEDERATE_NAME);
+        //rtiAmbassador.joinFederationExecution(FEDERATE_NAME, FEDERATE_TYPE, FEDERATION_NAME, foms.toArray(new URL[foms.size()]));
+        rtiAmbassador.joinFederationExecution(FEDERATE_NAME, FEDERATE_TYPE, FEDERATION_NAME);
     }
     
     public String getGreeting() {
         return "Hello World!";
     }
 
-    public static void main(String[] args) throws RTIinternalError, InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, FederationExecutionAlreadyExists, NotConnected, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected {
+    public static void main(String[] args) throws RTIinternalError, InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, FederationExecutionAlreadyExists, NotConnected, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected, FederateNameAlreadyInUse, NameNotFound, InvalidInteractionClassHandle, FederateNotExecutionMember, InteractionClassNotDefined {
 
         log.info("staring NETN reference federate A");
         App fed = new App(log);
         fed.connectToRti();
+
+        fed.setupDeclarations();
 
         // TODO implement the test logic here
         int duration = 8000;
@@ -81,9 +99,16 @@ public class App extends IVCT_NullFederateAmbassador{
                 return;
             }
             duration -= interval;
-            log.info("testing - remaining time {} ms", duration);
+            log.info("working - remaining time {} ms", duration);
         }
 
         log.info("terminate NETN reference federate A");
+    }
+
+    private void setupDeclarations() throws NameNotFound, InvalidInteractionClassHandle, FederateNotExecutionMember, NotConnected, RTIinternalError, InteractionClassNotDefined, SaveInProgress, RestoreInProgress {
+        aggregate = new Interaction.InteractionBuilder(rtiAmbassador, "MRM_Interaction.Request.Aggregate")
+            .removeSubunits("RemoveSubunits")
+            .build();
+        rtiAmbassador.publishInteractionClass(aggregate.getClassHandle());
     }
 }

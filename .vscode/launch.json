@@ -12,10 +12,27 @@
         },
         {
             "type": "java",
-            "name": "Launch App",
+            "name": "RefFedA-1",
             "request": "launch",
             "mainClass": "RefFedA.App",
-            "projectName": "RefFedA"
+            "projectName": "RefFedA",
+            "args": "RefFedB",
+            "env": {
+                "federate": "RefFedA-1",
+                "duration": "60000"
+            }
+        },
+        {
+            "type": "java",
+            "name": "RefFedA-2",
+            "request": "launch",
+            "mainClass": "RefFedA.App",
+            "projectName": "RefFedA",
+            "args": "RefFedB",
+            "env": {
+                "federate": "RefFedA-2",
+                "duration": "60000"
+            }
         }
     ]
 }

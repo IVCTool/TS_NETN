@@ -19,7 +19,7 @@
             "args": "RefFedB",
             "env": {
                 "federate": "RefFedA-1",
-                "duration": "60000"
+                "duration": "20000"
             }
         },
         {
@@ -31,7 +31,7 @@
             "args": "RefFedB",
             "env": {
                 "federate": "RefFedA-2",
-                "duration": "60000"
+                "duration": "20000"
             }
         }
     ]

@@ -7,23 +7,29 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import RefFedA.Interaction.AggregateInteraction;
+import RefFedA.Interaction.InteractionBuilder;
 import de.fraunhofer.iosb.tc_lib.IVCT_LoggingFederateAmbassador;
 import de.fraunhofer.iosb.tc_lib.IVCT_NullFederateAmbassador;
 import de.fraunhofer.iosb.tc_lib.IVCT_RTIambassador;
 import hla.rti1516e.CallbackModel;
 import hla.rti1516e.InteractionClassHandle;
 import hla.rti1516e.OrderType;
+import hla.rti1516e.ParameterHandle;
 import hla.rti1516e.ParameterHandleValueMap;
 import hla.rti1516e.RTIambassador;
 import hla.rti1516e.ResignAction;
 import hla.rti1516e.RtiFactory;
 import hla.rti1516e.RtiFactoryFactory;
 import hla.rti1516e.TransportationTypeHandle;
-import hla.rti1516e.encoding.EncoderFactory;
+import hla.rti1516e.encoding.DataElement;
+import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.exceptions.AlreadyConnected;
 import hla.rti1516e.exceptions.CallNotAllowedFromWithinCallback;
 import hla.rti1516e.exceptions.ConnectionFailed;
@@ -42,8 +48,6 @@ import hla.rti1516e.exceptions.FederationExecutionAlreadyExists;
 import hla.rti1516e.exceptions.FederationExecutionDoesNotExist;
 import hla.rti1516e.exceptions.InconsistentFDD;
 import hla.rti1516e.exceptions.InteractionClassNotDefined;
-import hla.rti1516e.exceptions.InteractionClassNotPublished;
-import hla.rti1516e.exceptions.InteractionParameterNotDefined;
 import hla.rti1516e.exceptions.InvalidInteractionClassHandle;
 import hla.rti1516e.exceptions.InvalidLocalSettingsDesignator;
 import hla.rti1516e.exceptions.InvalidResignAction;
@@ -64,19 +68,19 @@ public class App extends IVCT_NullFederateAmbassador{
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(App.class);
     private RTIambassador rtiAmbassador;
     private IVCT_LoggingFederateAmbassador loggingFederateAmbassador;
-    private Interaction aggregate;
-    private EncoderFactory encoderFactory;
+    private AggregateInteraction aggregate;
+
+    private static int aggNb = 0;
+
 
     public App(Logger logger) throws RTIinternalError {
         super(logger);
         RtiFactory rtiFactory = RtiFactoryFactory.getRtiFactory();
         rtiAmbassador = new IVCT_RTIambassador (rtiFactory.getRtiAmbassador(), rtiFactory.getEncoderFactory(),log);
         loggingFederateAmbassador = new IVCT_LoggingFederateAmbassador(this, log);
-        encoderFactory = rtiFactory.getEncoderFactory();
     }
     
     public void connectToRti() throws InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, NotConnected, RTIinternalError, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected, FederateNameAlreadyInUse {
-        File fddFile = new File ("foms/TS-NETN-v4.0.xml");
         ArrayList<URL> foms = new ArrayList<>();
         foms.add(new File("foms/RPR-FOM-v2.0/RPR-Base_v2.0.xml").toURI().toURL());
         foms.add(new File("foms/RPR-FOM-v2.0/RPR-Aggregate_v2.0.xml").toURI().toURL());
@@ -87,21 +91,42 @@ public class App extends IVCT_NullFederateAmbassador{
         rtiAmbassador.connect(loggingFederateAmbassador, CallbackModel.HLA_IMMEDIATE);
         try {
             rtiAmbassador.createFederationExecution(FEDERATION_NAME, foms.toArray(new URL[foms.size()]));
-        } catch (FederationExecutionAlreadyExists ignored) {
-        }
+        } catch (FederationExecutionAlreadyExists ignored) { }
         rtiAmbassador.joinFederationExecution(FEDERATE_NAME, FEDERATE_TYPE, FEDERATION_NAME);
     }
     
     public void setupDeclarations() throws NameNotFound, InvalidInteractionClassHandle, FederateNotExecutionMember, NotConnected, RTIinternalError, InteractionClassNotDefined, SaveInProgress, RestoreInProgress, FederateServiceInvocationsAreBeingReportedViaMOM {
-        aggregate = new Interaction.AggregateBuild(rtiAmbassador)
-            .addRemoveSubunits(true)
+        aggregate = new Interaction.AggregateBuilder(rtiAmbassador)
+            .addEventId()
+            .addFederate()
+            .addRemoveSubunits()
+            .addAggregateUnit()
             .build();
 
         aggregate.publish(rtiAmbassador);
         aggregate.subscribe(rtiAmbassador);
     }
 
-    public void sendInteraction() throws FederateNotExecutionMember, NotConnected, InteractionClassNotPublished, InteractionParameterNotDefined, InteractionClassNotDefined, SaveInProgress, RestoreInProgress, RTIinternalError {
+    public void sendInteraction() throws Exception {
+        aggregate.clear();
+        aggregate.send(rtiAmbassador);
+
+        aggregate.clear();
+        aggregate.setValueEventId((byte) 0x01);
+        aggregate.setValueFederate((short) 1);
+        aggregate.send(rtiAmbassador);
+
+        aggregate.clear();
+        aggregate.setValueEventId((byte) 0x02);
+        aggregate.setValueFederate((short) 2);
+        aggregate.setValueAggregateUnit((byte) 0x02);
+        aggregate.send(rtiAmbassador);
+
+        aggregate.clear();
+        aggregate.setValueEventId((byte) 0x03);
+        aggregate.setValueFederate((short) 3);
+        aggregate.setValueAggregateUnit((byte) 0x03);
+        aggregate.setValueRemoveSubunits(1);
         aggregate.send(rtiAmbassador);
     }
 
@@ -119,7 +144,7 @@ public class App extends IVCT_NullFederateAmbassador{
         return "Hello World!";
     }
 
-    public static void main(String[] args) throws RTIinternalError, InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, FederationExecutionAlreadyExists, NotConnected, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected, FederateNameAlreadyInUse, NameNotFound, InvalidInteractionClassHandle, FederateNotExecutionMember, InteractionClassNotDefined, FederateIsExecutionMember, InvalidResignAction, OwnershipAcquisitionPending, FederateOwnsAttributes, FederatesCurrentlyJoined, InteractionClassNotPublished, InteractionParameterNotDefined, FederateServiceInvocationsAreBeingReportedViaMOM {
+    public static void main(String[] args) throws Exception {
         int duration = 8000;
         int interval = 800;
 
@@ -140,8 +165,9 @@ public class App extends IVCT_NullFederateAmbassador{
 
         fed.setupDeclarations();
 
-        // TODO implement the test logic here
         while (duration > 0) {
+//            fed.aggregate.setValueAggregateUnit((byte) 0x03);
+
             fed.sendInteraction();
             try {
                 Thread.sleep(interval);
@@ -161,5 +187,19 @@ public class App extends IVCT_NullFederateAmbassador{
         @Override
         public void receiveInteraction(final InteractionClassHandle interactionClass, final ParameterHandleValueMap theParameters, final byte[] userSuppliedTag, final OrderType sentOrdering, final TransportationTypeHandle theTransport, final SupplementalReceiveInfo receiveInfo) throws FederateInternalError {
             log.warn("receiveInteraction not implemented");
+            Interaction i = InteractionBuilder.parse(interactionClass, theParameters);
+            log.warn("Interaction received {}", i.toString());
+            ParameterHandleValueMap parameterMap = i.getParameters();
+            for ( Entry<ParameterHandle, byte[]> entry : parameterMap.entrySet()) {
+                DataElement data = Interaction.knownDataElements.get(entry.getKey());
+                try {
+                    data.decode(entry.getValue());
+                } catch (DecoderException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                String value = data.toString();
+                log.info("Parameter: {} = {}", entry.getKey().toString(), entry.getValue().toString());
+            }
         }
 }

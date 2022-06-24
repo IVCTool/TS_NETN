@@ -82,11 +82,11 @@ public class App extends IVCT_NullFederateAmbassador{
     
     public void connectToRti() throws InconsistentFDD, ErrorReadingFDD, CouldNotOpenFDD, NotConnected, RTIinternalError, MalformedURLException, CouldNotCreateLogicalTimeFactory, FederationExecutionDoesNotExist, SaveInProgress, RestoreInProgress, FederateAlreadyExecutionMember, CallNotAllowedFromWithinCallback, ConnectionFailed, InvalidLocalSettingsDesignator, UnsupportedCallbackModel, AlreadyConnected, FederateNameAlreadyInUse {
         ArrayList<URL> foms = new ArrayList<>();
-        foms.add(new File("foms/RPR-FOM-v2.0/RPR-Base_v2.0.xml").toURI().toURL());
-        foms.add(new File("foms/RPR-FOM-v2.0/RPR-Aggregate_v2.0.xml").toURI().toURL());
-        foms.add(new File("foms/NETN-FOM-v4.0/NETN-BASE.xml").toURI().toURL());
-        foms.add(new File("foms/NETN-FOM-v4.0/NETN-MRM.xml").toURI().toURL());
-        foms.add(new File("foms/TS-NETN-v4.0.xml").toURI().toURL());
+        foms.add(new File("../foms/RPR-FOM-v2.0/RPR-Base_v2.0.xml").toURI().toURL());
+        foms.add(new File("../foms/RPR-FOM-v2.0/RPR-Aggregate_v2.0.xml").toURI().toURL());
+        foms.add(new File("../foms/NETN-FOM-v4.0/NETN-BASE.xml").toURI().toURL());
+        foms.add(new File("../foms/NETN-FOM-v4.0/NETN-MRM.xml").toURI().toURL());
+        foms.add(new File("../foms/TS-NETN-v4.0.xml").toURI().toURL());
 
         rtiAmbassador.connect(loggingFederateAmbassador, CallbackModel.HLA_IMMEDIATE);
         try {

@@ -1,0 +1,33 @@
+= Stand-alone Usage of the Test suites
+
+The test suite is supposed to be usable in a simple stand-alone setup, where the developer can use the testing assets without any extended IVCT framework installations. In such a setup the test cases can be used to support the simulator development, by using the test cases in test-driven-approach. 
+
+== Test Cases Wrapping as JUnit Tests
+
+For the test case development, as well as for using the test cases in stand-alone setups, the test cases are wrapped in JUnit tests. These wrappers are supporting the test cases with the required environment parameters. 
+
+Running a complete test for all asssets within the test suite would be done by the command:
+
+[bash]
+----
+gradle test
+----
+
+Starting a specfic test case can be done by naming the test case name, like this:
+
+[bash]
+----
+gradle :NETN-BASE:test --tests TC_BASE_0001Test.execute
+----
+
+
+== Running the Reference Rederate
+
+In order to develop test cases, the counterpart for these test cases is also required. This is a federate which is called the ``System under Test (SuT)``. In order to have a reference implementation for such a federate, the test suite also includes `Reference Federate` implementation. This is the `RefFedA` sup-project. The FefFedA shall implement the correct behavior defined by the FOM modules and an be used to run against the test suites, but also to be included in testing federation with some SuT developments. 
+
+The RefFedA implementation is designed as a standard java application, which can be directly used by the Java VM. It can also be used within the gradle build environment, with the run task:
+
+[bash]
+----
+start gradle :RefFedA:run
+----

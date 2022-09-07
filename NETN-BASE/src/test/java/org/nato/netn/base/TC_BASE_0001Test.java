@@ -19,7 +19,9 @@ public class TC_BASE_0001Test {
         "    \"fomFiles\": [ " +
                 "\"../foms/TS-NETN-v4.0.xml\", " +
                 "\"../foms/RPR-FOM-v2.0/RPR-Base_v2.0.xml\", " +
-                "\"../foms/NETN-FOM-v4.0/NETN-BASE.xml\"] " +
+                "\"../foms/RPR-FOM-v2.0/RPR-Aggregate_v2.0.xml\", " +
+                "\"../foms/NETN-FOM-v4.0/NETN-BASE.xml\", " +
+                "\"../foms/NETN-FOM-v4.0/NETN-MRM.xml\"] " +
         "}";
 
 

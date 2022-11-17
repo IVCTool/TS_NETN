@@ -68,16 +68,16 @@ public class Interaction {
         return parameters.getValueReference(handle);
     }
 
-    public void subscribe (RTIambassador rtiAambassador) throws FederateServiceInvocationsAreBeingReportedViaMOM, InteractionClassNotDefined, SaveInProgress, RestoreInProgress, FederateNotExecutionMember, NotConnected, RTIinternalError  {
-        rtiAambassador.subscribeInteractionClass(classHandle);
+    public void subscribe (RTIambassador rtiAmbassador) throws FederateServiceInvocationsAreBeingReportedViaMOM, InteractionClassNotDefined, SaveInProgress, RestoreInProgress, FederateNotExecutionMember, NotConnected, RTIinternalError  {
+        rtiAmbassador.subscribeInteractionClass(classHandle);
     }
 
-    public void publish (RTIambassador rtiAambassador) throws InteractionClassNotDefined, SaveInProgress, RestoreInProgress, FederateNotExecutionMember, NotConnected, RTIinternalError {
-        rtiAambassador.publishInteractionClass(classHandle);
+    public void publish (RTIambassador rtiAmbassador) throws InteractionClassNotDefined, SaveInProgress, RestoreInProgress, FederateNotExecutionMember, NotConnected, RTIinternalError {
+        rtiAmbassador.publishInteractionClass(classHandle);
     }
 
-    public void send (RTIambassador rtiAambassador) throws InteractionClassNotPublished, InteractionParameterNotDefined, InteractionClassNotDefined, SaveInProgress, RestoreInProgress, FederateNotExecutionMember, NotConnected, RTIinternalError {
-        rtiAambassador.sendInteraction(classHandle, parameters, null);
+    public void send (RTIambassador rtiAmbassador) throws InteractionClassNotPublished, InteractionParameterNotDefined, InteractionClassNotDefined, SaveInProgress, RestoreInProgress, FederateNotExecutionMember, NotConnected, RTIinternalError {
+        rtiAmbassador.sendInteraction(classHandle, parameters, null);
     }
 
     /**
@@ -87,14 +87,14 @@ public class Interaction {
 
         public static Map<InteractionClassHandle, InteractionBuilder> knownBuilder = new HashMap<>();
 
-        protected RTIambassador rtiAambassador;
+        protected RTIambassador rtiAmbassador;
         protected InteractionClassHandle messageId;
         protected ParameterHandleValueMap parameters;
         protected EncoderFactory encoderFactory;
         protected HashMap<String,ParameterHandle> parameterHandles;
 
         public InteractionBuilder (RTIambassador rtiAmbassador, String messageName) throws NameNotFound, FederateNotExecutionMember, NotConnected, RTIinternalError {
-            this.rtiAambassador = rtiAmbassador;
+            this.rtiAmbassador = rtiAmbassador;
             this.messageId = rtiAmbassador.getInteractionClassHandle(messageName);
             this.parameters = rtiAmbassador.getParameterHandleValueMapFactory().create(1);
             this.encoderFactory = RtiFactoryFactory.getRtiFactory().getEncoderFactory();
@@ -103,7 +103,7 @@ public class Interaction {
         }
         
         public InteractionBuilder addParameter (String parameterName, byte[] value) throws NameNotFound, InvalidInteractionClassHandle, FederateNotExecutionMember, NotConnected, RTIinternalError {
-            ParameterHandle handle = this.rtiAambassador.getParameterHandle(this.messageId, parameterName);
+            ParameterHandle handle = this.rtiAmbassador.getParameterHandle(this.messageId, parameterName);
             parameterHandles.put(parameterName, handle);
             parameters.put(handle, value);
             return this;
@@ -203,7 +203,7 @@ public class Interaction {
         }
 
         public void setAggregateUnit(byte value) throws NameNotFound, InvalidInteractionClassHandle, FederateNotExecutionMember, NotConnected, RTIinternalError {
-            ParameterHandle handle = this.rtiAambassador.getParameterHandle(this.messageId, "AggregateUnit");
+            ParameterHandle handle = this.rtiAmbassador.getParameterHandle(this.messageId, "AggregateUnit");
             ByteWrapper wrapper = parameters.getValueReference(handle);
             wrapper.put(value);
         }

@@ -5,11 +5,7 @@ package RefFedA;
 
 
 import org.junit.jupiter.api.Test;
-
 import org.slf4j.LoggerFactory;
-
-import hla.rti1516e.exceptions.RTIinternalError;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppTest {
@@ -20,7 +16,9 @@ class AppTest {
         App classUnderTest = null;
         try {
             classUnderTest = new App(log);
-        } catch (RTIinternalError e) {
+            App.main(null);
+            
+        } catch (Exception e) {
             fail(e);
         }
         assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");

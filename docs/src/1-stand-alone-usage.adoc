@@ -29,5 +29,5 @@ The RefFedA implementation is designed as a standard java application, which can
 
 [bash]
 ----
-start gradle :RefFedA:run
+gradle :RefFedA:run
 ----

@@ -11,6 +11,6 @@
 rootProject.name = 'TS_NETN'
 include('NETN-BASE')
 include('NETN-PLATFORM')
-include('NETN-TASKING')
-include('NETN-UNIT')
+include('NETN-ETR')
+include('NETN-ORG')
 include('RefFedA')

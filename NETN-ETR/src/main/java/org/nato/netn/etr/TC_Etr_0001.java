@@ -7,6 +7,8 @@ import de.fraunhofer.iosb.tc_lib.IVCT_BaseModel;
 import de.fraunhofer.iosb.tc_lib.TcInconclusive;
 import de.fraunhofer.iosb.tc_lib_if.TcFailedIf;
 import de.fraunhofer.iosb.tc_lib_if.TcInconclusiveIf;
+import org.nato.ivct.OmtEncodingHelpers.Core.objects.HLAobjectRoot;	
+
 
 public class TC_Etr_0001 extends AbstractTestCase{
 

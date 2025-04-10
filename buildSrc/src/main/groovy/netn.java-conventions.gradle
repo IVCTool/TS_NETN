@@ -5,6 +5,13 @@ plugins {
     id 'java'
 }
 
+// Java Version Compatibility
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 // Projects should use Maven Central for external dependencies
 // Maven Local may be used for internal testing
 // snpashots are required for IVCT development testing

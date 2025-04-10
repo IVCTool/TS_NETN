@@ -35,6 +35,10 @@ dependencies {
     // Use Simple Logging Facade API for reporting
     api 'org.slf4j:slf4j-api:1.7.10'
     api 'com.googlecode.json-simple:json-simple:1.1.1'
+    // Omt Encoding and Decoding Helpers
+    api 'org.nato.ivct.OmtEncodingHelper.Core:Core.lib:0.1-SNAPSHOT'
+    api 'org.nato.ivct.OmtEncodingHelper.Rpr:Rpr.lib:0.1-SNAPSHOT'
+    api 'org.nato.ivct.OmtEncodingHelper.Netn:Netn.lib:0.1-SNAPSHOT'
 
 	testImplementation files("$System.env.LRC_CLASSPATH")
 }

@@ -1,4 +1,4 @@
-package org.nato.netn.unit;
+package org.nato.netn.org;
 
 import org.slf4j.Logger;
 
@@ -8,7 +8,7 @@ import de.fraunhofer.iosb.tc_lib.TcInconclusive;
 import de.fraunhofer.iosb.tc_lib_if.TcFailedIf;
 import de.fraunhofer.iosb.tc_lib_if.TcInconclusiveIf;
 
-public class TC_UNIT_0001 extends AbstractTestCase{
+public class TC_Org_0001 extends AbstractTestCase{
 
     @Override
     protected IVCT_BaseModel getIVCT_BaseModel(String tcParamJson, Logger logger) throws TcInconclusive {

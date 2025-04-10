@@ -1,13 +1,13 @@
 {
-    "id": "NETN-UNIT-4_0",
+    "id": "NETN-ORG-4_0",
     "version": "4.0-SNAPSHOT",
-    "name": "NETN-UNIT 4.0 Test Suite",
-    "description": "Collection of NETN-UNIT test cases",
-    "tsRunTimeFolder": "NETN-UNIT-4.0-SNAPSHOT",
-    "tsLibTimeFolder": "NETN-UNIT-4.0-SNAPSHOT/lib",
+    "name": "NETN-ORG 4.0 Test Suite",
+    "description": "Collection of NETN-ORG test cases",
+    "tsRunTimeFolder": "NETN-ORG-4.0-SNAPSHOT",
+    "tsLibTimeFolder": "NETN-ORG-4.0-SNAPSHOT/lib",
     "testcases": [
         {
-            "TC": "org.nato.netn.unit.TC_UNIT_0001",
+            "TC": "org.nato.netn.org.TC_Org_0001",
             "IR": ["NETN-BASE-0001"],
             "description": "Abstract test case description"
         }

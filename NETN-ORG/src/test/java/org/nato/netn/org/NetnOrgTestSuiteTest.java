@@ -1,7 +1,7 @@
 /*
  * Testing the ServiceLoader for test suites
  */
-package org.nato.netn.unit;
+package org.nato.netn.org;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -17,15 +17,15 @@ import de.fraunhofer.iosb.tc_lib_if.TestSuite;
 
 import org.slf4j.LoggerFactory;
 
-public class NetnUnitTestSuiteTest {
+public class NetnOrgTestSuiteTest {
 
-    public static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnUnitTestSuiteTest.class);
+    public static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnOrgTestSuiteTest.class);
     
     @Test 
     void testTestCaseLoader() throws FileNotFoundException, IOException, ParseException {
         log.trace("ServiceLoader test");
         NetnUnitTestSuite ts = new NetnUnitTestSuite();
-        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.unit.TC_UNIT_0001");
+        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.org.TC_Org_0001");
         assertNotNull(tc);
     }
 
@@ -34,7 +34,7 @@ public class NetnUnitTestSuiteTest {
         ServiceLoader<TestSuite> loader = ServiceLoader.load(TestSuite.class);
         for (TestSuite factory : loader) {
             String label = factory.getId();
-            assertEquals(NetnUnitTestSuite.TEST_SUITE_ID, label);
+            assertEquals(NetnOrgTestSuite.TEST_SUITE_ID, label);
             log.trace("found {} test suite", label);
         }
     }

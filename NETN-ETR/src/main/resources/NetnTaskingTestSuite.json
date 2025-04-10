@@ -1,13 +1,13 @@
 {
-    "id": "NETN-TASKING-4_0",
+    "id": "NETN-ETR-4_0",
     "version": "4.0-SNAPSHOT",
-    "name": "NETN-TASKING 4.0 Test Suite",
-    "description": "Collection of NETN-TASKING test cases",
-    "tsRunTimeFolder": "NETN-TASKING-4.0-SNAPSHOT",
-    "tsLibTimeFolder": "NETN-TASKING-4.0-SNAPSHOT/lib",
+    "name": "NETN-ETR 4.0 Test Suite",
+    "description": "Collection of NETN-ETR test cases",
+    "tsRunTimeFolder": "NETN-ETR-4.0-SNAPSHOT",
+    "tsLibTimeFolder": "NETN-ETR-4.0-SNAPSHOT/lib",
     "testcases": [
         {
-            "TC": "org.nato.netn.tasking.TC_TASKING_0001",
+            "TC": "org.nato.netn.ETR.TC_ETR_0001",
             "IR": ["NETN-BASE-0001"],
             "description": "Abstract test case description"
         }

@@ -22,6 +22,6 @@ The test suites modules are aligned to the badge structure.
 
 ## LICENCE
 
-Copyright 2022 NATO/OTAN
+Copyright 2025 NATO/OTAN
 
 Licensed under the Apache License, [Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)

@@ -7,8 +7,8 @@
     "tsLibTimeFolder": "NETN-ETR-4.0-SNAPSHOT/lib",
     "testcases": [
         {
-            "TC": "org.nato.netn.ETR.TC_ETR_0001",
-            "IR": ["NETN-BASE-0001"],
+            "TC": "org.nato.netn.etr.TC_ETR_0001",
+            "IR": ["NETN-ETR-0001"],
             "description": "Abstract test case description"
         }
     ],

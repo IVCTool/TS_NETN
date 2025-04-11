@@ -37,6 +37,6 @@ dependencies {
     testImplementation 'ch.qos.logback:logback-classic:1.2.11'
     
     // Use JUnit Jupiter for testing.
-	testImplementation(platform('org.junit:junit-bom:5.8.2'))
+	testImplementation(platform('org.junit:junit-bom:5.10.2'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
 }

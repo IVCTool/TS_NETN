@@ -17,6 +17,7 @@ import java.net.URL;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import hla.rti1516e.FederateHandle;
 
 public class TC_Etr_0001 extends AbstractTestCase {
@@ -94,7 +95,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
            
         // Initiate rti: connect and join
         logger.info("SUT federate: " + baseModel.getSutFederateName());
-        federateHandle = baseModel.initiateRti(baseModel.getSutFederateName(), ivct_LoggingFederateAmbassador);
+        federateHandle = baseModel.initiateRti(this.getClass().getSimpleName(), ivct_LoggingFederateAmbassador);
     }
 
     @Override
@@ -103,13 +104,10 @@ public class TC_Etr_0001 extends AbstractTestCase {
         if (baseModel == null) {
             logger.error("test case not initialized");
             return;
-        }    
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
+        
+        // test for SupportedActions == MoveByRoute from SuT
+        baseModel.testSupportedActions(EntityControlActionEnum32.MoveByRoute);
     }
 
     @Override

@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
-import org.nato.ivct.OmtEncodingHelpers.Netn.Base.objects.BaseEntity;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskDefinitionsStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
 import org.slf4j.Logger;
@@ -39,14 +41,18 @@ import hla.rti1516e.exceptions.SaveInProgress;
 
 public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 
+    interface Callback {
+        boolean call();
+    }
+
     // design issue: logger is private in IVCT_BaseModel
     private Logger logger;
-    private BaseEntity baseEntity;
     private HashMap<ObjectInstanceHandle, BaseEntity> knownBaseEntities = new HashMap<>();
     private volatile BaseEntity baseEntityFromSuT = null;
     private volatile boolean requestedActionSupported = false;
     private EntityControlActionEnum32 supportedAction2Test;
     private static long RESCHEDULE = 200;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public NetnEtrIvctBaseModel(Logger logger, IVCT_TcParam ivct_TcParam) {
         super(logger, ivct_TcParam);
@@ -59,7 +65,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     public void discoverObjectInstance(final ObjectInstanceHandle theObject, final ObjectClassHandle theObjectClass, final String objectName) throws FederateInternalError {
         try {
             String receivedClass = ivct_rti.getObjectClassName(theObjectClass);
-            if (receivedClass.equals(baseEntity.getHlaClassName())) {
+            if (receivedClass.equals(new BaseEntity().getHlaClassName())) {
                 BaseEntity obj = new BaseEntity();
                 obj.setObjectHandle(theObject);
                 knownBaseEntities.put(theObject, obj);
@@ -106,23 +112,32 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             byte[] userSuppliedTag, OrderType sentOrdering, TransportationTypeHandle theTransport,
             SupplementalReflectInfo reflectInfo) throws FederateInternalError {
         logger.trace("reflectAttributeValues without time");
-        BaseEntity baseEntity = knownBaseEntities.get(theObject); // should be baseEntityFromSuT
-        if (baseEntity != null) {
-            baseEntity.clear();
-            try {
-                baseEntity.decode(theAttributes);
-                EntityControlActionsStruct supportedActions = baseEntity.getSupportedActions();
-                for (HLAinteger32BE value : supportedActions) {
-                    EntityControlActionEnum32 ev = EntityControlActionEnum32.get(value.getValue());
-                    if (ev.equals(supportedAction2Test)) {
-                        // our SuT states that it supports the requested action
-                        requestedActionSupported = true;
-                    }
+        
+        if (baseEntityFromSuT == null) return;
+        if (!theObject.equals(baseEntityFromSuT.getObjectHandle())) return;
+ 
+        baseEntityFromSuT.clear();
+        try {
+            baseEntityFromSuT.decode(theAttributes);
+            //
+            EntityControlActionsStruct supportedActions = baseEntityFromSuT.getSupportedActions();
+            for (HLAinteger32BE value : supportedActions) {
+                EntityControlActionEnum32 ev = EntityControlActionEnum32.get(value.getValue());
+                if (ev.equals(supportedAction2Test)) {
+                    // our SuT states that it supports the requested action
+                    requestedActionSupported = true;
                 }
-            } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected
-                    | RTIinternalError | DecoderException e) {
-                logger.error("reflectAttributeValues received Exception", e);
             }
+            //
+            ArrayOfTaskDefinitionsStruct currentTasks = baseEntityFromSuT.getCurrentTasks();
+            //
+            ArrayOfTaskProgressStruct taskProgress = baseEntityFromSuT.getTaskProgress();
+            //
+            UUIDStruct uniqueId = baseEntityFromSuT.getUniqueId();
+            //
+        } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected
+                | RTIinternalError | DecoderException e) {
+            logger.error("reflectAttributeValues received Exception", e);
         }
     }
     // end of callback section
@@ -140,10 +155,15 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 		return null;
     }
 
-    private BaseEntity subscribeSupportedActions() throws TcInconclusiveIf {
+    private BaseEntity subscribeAttributes() throws TcInconclusiveIf {
         try {
-            baseEntity = new BaseEntity();
+            // this is BaseEntity as defined in NETN-ETR
+            // the additional attributes from RPR-BASE BaseEnetity are not available here
+            BaseEntity baseEntity = new BaseEntity();
             baseEntity.subscribeSupportedActions();
+            baseEntity.subscribeCurrentTasks();
+            baseEntity.subscribeTaskProgress();
+            baseEntity.subscribeUniqueId();
             baseEntity.subscribe();
             return baseEntity;
         } catch (Exception e) {
@@ -151,54 +171,46 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         }
     }
 
-    public void testSupportedActions(EntityControlActionEnum32 sat) throws TcInconclusiveIf {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        BaseEntity subscribedEntity = subscribeSupportedActions();
-        supportedAction2Test = sat;
-
-        // wait for SupportedActions in baseEntityFromSuT
+    private void waitWhile(ExecutorService executorService, Callback f, String rs) {
         CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> {
             try {
-                while (baseEntityFromSuT == null) {Thread.sleep(RESCHEDULE);}
+                while (f.call()) {Thread.sleep(RESCHEDULE);}
             } catch (InterruptedException e) {
                 //
             }
-            return "Supported Actions";
+            return rs;
         }, executorService);
 
         f1.thenAccept(result -> {
-            logger.info(result + " from federate " + getSutFederateName() + " received.");
+            logger.info(result + " from SuT federate " + getSutFederateName() + " received.");
         })
         .exceptionally(throwable -> {
             logger.error("Error occurred in : waitForSupportedActions.f1 " + throwable.getMessage());
             return null;
-        });
+        });        
+    }
+
+    public void getBaseEntityFromSuT() throws TcInconclusiveIf {
+
+        // wait for a BaseEntity from our SuT
+        waitWhile(executorService, () -> {return baseEntityFromSuT == null;}, "BaseEntity");
 
         // trigger reflection of attributes for objectHandle of baseEntityFromSuT
         try {
-            ivct_rti.requestAttributeValueUpdate(baseEntityFromSuT.getObjectHandle(), subscribedEntity.getSubscribedAttributes(), null);
+            ivct_rti.requestAttributeValueUpdate(baseEntityFromSuT.getObjectHandle(), subscribeAttributes().getSubscribedAttributes(), null);
         } catch (AttributeNotDefined | ObjectInstanceNotKnown | SaveInProgress | RestoreInProgress
                 | FederateNotExecutionMember | NotConnected | RTIinternalError e) {
             throw new TcInconclusiveIf(e.getMessage());
         }
+    }
 
-        CompletableFuture<String> f2 = CompletableFuture.supplyAsync(() -> {
-            try {
-                while (!requestedActionSupported) {Thread.sleep(RESCHEDULE);}
-            } catch (InterruptedException e) {
-                //
-            }
-            return "Supported Actions: MoveByRoute";
-        }, executorService);
+    public void testSupportedActions(EntityControlActionEnum32 sat) {
+        // 
+        waitWhile(executorService, () -> {return !requestedActionSupported;}, "Supported Actions");        
+    }
 
-        f2.thenAccept(result -> {
-            logger.info(result + " from federate " + getSutFederateName() + " received.");
-        })
-        .exceptionally(throwable -> {
-            logger.error("Error occurred in : waitForSupportedActions.f2 " + throwable.getMessage());
-            return null;
-        });        
-
-        executorService.shutdown();        
+    public void terminate() {
+        terminateRti();
+        executorService.shutdown();
     }
 }

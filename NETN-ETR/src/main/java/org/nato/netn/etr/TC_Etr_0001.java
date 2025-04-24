@@ -106,8 +106,13 @@ public class TC_Etr_0001 extends AbstractTestCase {
             return;
         }
         
+        // wait for a BaseEntity from our SuT
+        baseModel.getBaseEntityFromSuT();
+
         // test for SupportedActions == MoveByRoute from SuT
-        baseModel.testSupportedActions(EntityControlActionEnum32.MoveByRoute);
+        EntityControlActionEnum32 sa = EntityControlActionEnum32.MoveByRoute;
+        logger.info("Test step - test SuT if it supports " + sa);
+        baseModel.testSupportedActions(sa);
     }
 
     @Override
@@ -118,7 +123,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
             return;
         }
 
-        baseModel.terminateRti();
+        baseModel.terminate();
     }
     
 }

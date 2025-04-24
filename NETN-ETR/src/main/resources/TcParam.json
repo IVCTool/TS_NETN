@@ -1,4 +1,6 @@
 {
     "federationName" : "DirksFederation",
-    "sutFederateName" : "SutFederate1"
+    "sutFederateName" : "SutFederate1",
+    "supportedActions" : ["MoveByRoute"],
+    "taskId" : "77e004e5-a3b3-43be-b655-0f9167ec051b"
 }

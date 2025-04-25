@@ -2,6 +2,9 @@ package org.nato.netn.etr;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
+
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -16,6 +19,8 @@ public class NetnEtrTcParam implements IVCT_TcParam {
     //public static final String FOMFILES = "fomFiles";
     public static final String FEDERATION_NAME = "federationName";
     public static final String SUT_FEDERATE_NAME = "sutFederateName";
+    public static final String SUT_SUPPRTED_ACTIONS = "supportedActions";
+    public static final String SUT_TASK_ID = "taskId";
     
     private NetnFomFiles fomFiles;
     //private ArrayList<URL> urls = new ArrayList<>();
@@ -59,6 +64,23 @@ public class NetnEtrTcParam implements IVCT_TcParam {
             throw new TcInconclusive("Parameter " + FEDERATION_NAME + " not set.");
         }
         return (String)o;
+    }
+
+    public String [] getSupportedActions() throws TcInconclusive {
+        Object o = parameter.get(SUT_SUPPRTED_ACTIONS);
+        if (o == null) {
+            throw new TcInconclusive("Parameter " + SUT_SUPPRTED_ACTIONS + " not set.");
+        }
+        JSONArray ja = (JSONArray)o;
+        return Arrays.stream(ja.toArray()).map(t -> (String)t).toArray(String[]::new);
+    }
+
+    public String getTaskId() throws TcInconclusive {
+        Object o = parameter.get(SUT_TASK_ID);
+        if (o == null) {
+            throw new TcInconclusive("Parameter " + SUT_TASK_ID + " not set.");
+        }
+        return (String)o;        
     }
 
 }

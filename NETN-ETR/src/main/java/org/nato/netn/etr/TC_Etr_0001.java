@@ -17,8 +17,18 @@ import java.net.URL;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
+
 import hla.rti1516e.FederateHandle;
+import hla.rti1516e.encoding.ByteWrapper;
+import hla.rti1516e.encoding.EncoderException;
+import hla.rti1516e.exceptions.FederateNotExecutionMember;
+import hla.rti1516e.exceptions.InvalidObjectClassHandle;
+import hla.rti1516e.exceptions.NameNotFound;
+import hla.rti1516e.exceptions.NotConnected;
+import hla.rti1516e.exceptions.RTIinternalError;
 
 public class TC_Etr_0001 extends AbstractTestCase {
 
@@ -86,6 +96,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
     @Override
     protected void preambleAction(Logger logger) throws TcInconclusiveIf {
         logger.info("TC_Etr_0001 preamble");
+        
         if (baseModel == null) {
             logger.error("test case not initialized");
             return;
@@ -101,23 +112,41 @@ public class TC_Etr_0001 extends AbstractTestCase {
     @Override
     protected void performTest(Logger logger) throws TcInconclusiveIf, TcFailedIf {
         logger.info("TC_Etr_0001 test case started");
+        
         if (baseModel == null) {
             logger.error("test case not initialized");
             return;
         }
         
         // wait for a BaseEntity from our SuT
-        baseModel.getBaseEntityFromSuT();
+        BaseEntity be = baseModel.getBaseEntityFromSuT();
 
-        // test for SupportedActions == MoveByRoute from SuT
-        EntityControlActionEnum32 sa = EntityControlActionEnum32.MoveByRoute;
+        // test for SupportedActions from SuT
+        String [] sa = netnTcParam.getSupportedActions();
+        EntityControlActionEnum32 eca = EntityControlActionEnum32.valueOf(sa[0]);
         logger.info("Test step - test SuT if it supports " + sa);
-        baseModel.testSupportedActions(sa);
+        baseModel.testSupportedActions(eca);
+        
+        // test for task id, which is used to task entities of SuT
+        String taskId = netnTcParam.getTaskId();
+        try {
+            UUIDStruct us = new UUIDStruct();
+            us.encode(new ByteWrapper(taskId.getBytes()));
+            logger.info("Send MoveByRoute task with id " + us.toString() + " to " + be.getUniqueId());
+            baseModel.sendTask(us);
+            // TODO: test SMC_Response
+            // TODO: test ETR_Status
+            // test current tasks in BaseEntity
+            baseModel.testCurrentTasks(us);
+        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException e) {
+            throw new TcInconclusive(e.getMessage());
+        }
     }
 
     @Override
     protected void postambleAction(Logger logger) throws TcInconclusiveIf {
         logger.info("TC_Etr_0001 postamble");
+        
         if (baseModel == null) {
             logger.error("test case not initialized");
             return;

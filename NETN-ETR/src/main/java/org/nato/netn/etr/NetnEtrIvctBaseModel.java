@@ -1,6 +1,7 @@
 package org.nato.netn.etr;
 
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,6 +11,10 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskDefinitionsStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskDefinitionStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.WaypointStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
 import org.slf4j.Logger;
 
@@ -25,12 +30,16 @@ import hla.rti1516e.ObjectClassHandle;
 import hla.rti1516e.ObjectInstanceHandle;
 import hla.rti1516e.OrderType;
 import hla.rti1516e.TransportationTypeHandle;
+import hla.rti1516e.encoding.ByteWrapper;
 import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.encoding.EncoderException;
 import hla.rti1516e.encoding.HLAinteger32BE;
 import hla.rti1516e.exceptions.AttributeNotDefined;
 import hla.rti1516e.exceptions.FederateInternalError;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
+import hla.rti1516e.exceptions.InteractionClassNotDefined;
+import hla.rti1516e.exceptions.InteractionClassNotPublished;
+import hla.rti1516e.exceptions.InteractionParameterNotDefined;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
 import hla.rti1516e.exceptions.NameNotFound;
 import hla.rti1516e.exceptions.NotConnected;
@@ -50,7 +59,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     private HashMap<ObjectInstanceHandle, BaseEntity> knownBaseEntities = new HashMap<>();
     private volatile BaseEntity baseEntityFromSuT = null;
     private volatile boolean requestedActionSupported = false;
+    private volatile boolean requestedTaskIdFound = false;
     private EntityControlActionEnum32 supportedAction2Test;
+    private UUIDStruct taskId2Test;
     private static long RESCHEDULE = 200;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -60,6 +71,43 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         BaseEntity.initialize(ivct_rti);
     }
 
+    private MoveByRouteTaskStruct createTask() throws RTIinternalError {
+        MoveByRouteTaskStruct t = new MoveByRouteTaskStruct(); // standard move type is CrossCountry
+        WaypointStruct wp1 = new WaypointStruct();
+        wp1.getLocation().setY(48.066);
+        wp1.getLocation().setX(11.649);
+        wp1.getLocation().setZ(0.0);
+        WaypointStruct wp2 = new WaypointStruct();
+        wp2.getLocation().setY(48.0684);
+        wp2.getLocation().setX(11.642);
+        wp2.getLocation().setZ(0.0);
+        t.getArrayOfWaypointsStruct().addElement(wp1);
+        t.getArrayOfWaypointsStruct().addElement(wp2);
+        return t;
+    }
+
+    // returns UUID from MoveByRoute interaction
+    public UUID sendTask(UUIDStruct taskId) throws TcInconclusiveIf {
+        UUID u = null;
+        if (baseEntityFromSuT == null) {
+            throw new TcInconclusiveIf("call first getBaseEntityFromSuT.");
+        }
+        try {
+            MoveByRoute mbr = new MoveByRoute();
+            mbr.setTaskParameters(createTask());
+            UUIDStruct uniqueId = new UUIDStruct();
+            u = UUID.randomUUID();
+            uniqueId.encode(new ByteWrapper(u.toString().getBytes()));
+            mbr.setUniqueId(uniqueId);
+            mbr.setTaskId(uniqueId);
+            mbr.setEntity(baseEntityFromSuT.getUniqueId());
+            mbr.send();
+        } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | OmtEncodingHelperException | InteractionClassNotPublished | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress | InvalidObjectClassHandle | EncoderException e) {
+            throw new TcInconclusiveIf("Could not send task MoveByRoute.");
+        }
+        return u;
+    }
     // callback section
     @Override
     public void discoverObjectInstance(final ObjectInstanceHandle theObject, final ObjectClassHandle theObjectClass, final String objectName) throws FederateInternalError {
@@ -126,10 +174,17 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                 if (ev.equals(supportedAction2Test)) {
                     // our SuT states that it supports the requested action
                     requestedActionSupported = true;
+                    break;
                 }
             }
             //
             ArrayOfTaskDefinitionsStruct currentTasks = baseEntityFromSuT.getCurrentTasks();
+            for (TaskDefinitionStruct tds : currentTasks) {
+                if (tds.getTaskId().equals(taskId2Test)) {
+                    requestedTaskIdFound = true;
+                    break;
+                }
+            }
             //
             ArrayOfTaskProgressStruct taskProgress = baseEntityFromSuT.getTaskProgress();
             //
@@ -171,6 +226,19 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         }
     }
 
+    private void publishInteractions() {
+        try {
+            MoveByRoute mbr = new MoveByRoute();
+            // mbr.publishTaskId();
+            // mbr.publishUniqueId();
+            mbr.publish();
+        } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | OmtEncodingHelperException | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
     private void waitWhile(ExecutorService executorService, Callback f, String rs) {
         CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> {
             try {
@@ -190,7 +258,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         });        
     }
 
-    public void getBaseEntityFromSuT() throws TcInconclusiveIf {
+    public BaseEntity getBaseEntityFromSuT() throws TcInconclusiveIf {
 
         // wait for a BaseEntity from our SuT
         waitWhile(executorService, () -> {return baseEntityFromSuT == null;}, "BaseEntity");
@@ -202,11 +270,19 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                 | FederateNotExecutionMember | NotConnected | RTIinternalError e) {
             throw new TcInconclusiveIf(e.getMessage());
         }
+        return baseEntityFromSuT;
     }
 
     public void testSupportedActions(EntityControlActionEnum32 sat) {
-        // 
+        //
+        supportedAction2Test = sat;
         waitWhile(executorService, () -> {return !requestedActionSupported;}, "Supported Actions");        
+    }
+
+    public void testCurrentTasks(UUIDStruct reqTaskId) {
+        //
+        taskId2Test = reqTaskId; 
+        waitWhile(executorService, () -> {return !requestedTaskIdFound;}, "Supported Actions");        
     }
 
     public void terminate() {

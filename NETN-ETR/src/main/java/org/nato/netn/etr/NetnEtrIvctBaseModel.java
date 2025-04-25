@@ -1,34 +1,45 @@
 package org.nato.netn.etr;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskDefinitionsStruct;
-import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskDefinitionStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.WaypointStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_Response;
 import org.slf4j.Logger;
 
 import de.fraunhofer.iosb.tc_lib.IVCT_BaseModel;
 import de.fraunhofer.iosb.tc_lib.IVCT_TcParam;
+import de.fraunhofer.iosb.tc_lib.TcInconclusive;
 import de.fraunhofer.iosb.tc_lib_if.TcInconclusiveIf;
 import hla.rti1516e.AttributeHandle;
 import hla.rti1516e.AttributeHandleValueMap;
 import hla.rti1516e.FederateHandle;
+import hla.rti1516e.InteractionClassHandle;
 import hla.rti1516e.LogicalTime;
 import hla.rti1516e.MessageRetractionHandle;
 import hla.rti1516e.ObjectClassHandle;
 import hla.rti1516e.ObjectInstanceHandle;
 import hla.rti1516e.OrderType;
+import hla.rti1516e.ParameterHandleValueMap;
 import hla.rti1516e.TransportationTypeHandle;
 import hla.rti1516e.encoding.ByteWrapper;
 import hla.rti1516e.encoding.DecoderException;
@@ -37,9 +48,11 @@ import hla.rti1516e.encoding.HLAinteger32BE;
 import hla.rti1516e.exceptions.AttributeNotDefined;
 import hla.rti1516e.exceptions.FederateInternalError;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
+import hla.rti1516e.exceptions.FederateServiceInvocationsAreBeingReportedViaMOM;
 import hla.rti1516e.exceptions.InteractionClassNotDefined;
 import hla.rti1516e.exceptions.InteractionClassNotPublished;
 import hla.rti1516e.exceptions.InteractionParameterNotDefined;
+import hla.rti1516e.exceptions.InvalidInteractionClassHandle;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
 import hla.rti1516e.exceptions.NameNotFound;
 import hla.rti1516e.exceptions.NotConnected;
@@ -57,18 +70,21 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     // design issue: logger is private in IVCT_BaseModel
     private Logger logger;
     private HashMap<ObjectInstanceHandle, BaseEntity> knownBaseEntities = new HashMap<>();
-    private volatile BaseEntity baseEntityFromSuT = null;
-    private volatile boolean requestedActionSupported = false;
-    private volatile boolean requestedTaskIdFound = false;
-    private EntityControlActionEnum32 supportedAction2Test;
-    private UUIDStruct taskId2Test;
-    private static long RESCHEDULE = 200;
+    private List<BaseEntity> baseEntitiesFromSuT = new ArrayList<>();
+    private List<BaseEntity> baseEntitiesFromSuTWithSA;
+    private List<ETR_TaskStatus> taskStatusList = new ArrayList<>();
+    private List<SMC_Response> responses = new ArrayList<>();
+    private static long RESCHEDULE = 500;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private BaseEntity subscribedAttributes;
 
-    public NetnEtrIvctBaseModel(Logger logger, IVCT_TcParam ivct_TcParam) {
+    public NetnEtrIvctBaseModel(Logger logger, IVCT_TcParam ivct_TcParam) throws TcInconclusive {
         super(logger, ivct_TcParam);
         this.logger = logger;
         BaseEntity.initialize(ivct_rti);
+        subscribedAttributes = subscribeAttributes();
+        publishInteractions();
+        subscribeInteractions();
     }
 
     private MoveByRouteTaskStruct createTask() throws RTIinternalError {
@@ -87,36 +103,69 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     // returns UUID from MoveByRoute interaction
-    public UUID sendTask(UUIDStruct taskId) throws TcInconclusiveIf {
-        UUID u = null;
-        if (baseEntityFromSuT == null) {
-            throw new TcInconclusiveIf("call first getBaseEntityFromSuT.");
-        }
+    public UUIDStruct sendTask(BaseEntity be, UUIDStruct taskId) throws TcInconclusiveIf {
+        UUIDStruct uniqueId = null;
         try {
             MoveByRoute mbr = new MoveByRoute();
             mbr.setTaskParameters(createTask());
-            UUIDStruct uniqueId = new UUIDStruct();
-            u = UUID.randomUUID();
+            uniqueId = new UUIDStruct();
+            UUID u = UUID.randomUUID();
             uniqueId.encode(new ByteWrapper(u.toString().getBytes()));
             mbr.setUniqueId(uniqueId);
             mbr.setTaskId(uniqueId);
-            mbr.setEntity(baseEntityFromSuT.getUniqueId());
+            mbr.setEntity(be.getUniqueId());
             mbr.send();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | InteractionClassNotPublished | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress | InvalidObjectClassHandle | EncoderException e) {
             throw new TcInconclusiveIf("Could not send task MoveByRoute.");
         }
-        return u;
+        return uniqueId;
     }
+
     // callback section
+    @Override
+    public void receiveInteraction(final InteractionClassHandle interactionClass, final ParameterHandleValueMap theParameters, final byte[] userSuppliedTag, final OrderType sentOrdering, final TransportationTypeHandle theTransport, final SupplementalReceiveInfo receiveInfo) throws FederateInternalError {
+        if (checkSuTHandle(receiveInfo.getProducingFederate())) {
+            try {
+                String receivedClass = ivct_rti.getInteractionClassName(interactionClass);
+                ETR_TaskStatus ts = new ETR_TaskStatus();
+                if (receivedClass.equals(ts.getHlaClassName())) {
+                    ts.decode(theParameters);
+                    taskStatusList.add(ts);
+                }
+                SMC_Response re = new SMC_Response();
+                if (receivedClass.equals(re.getHlaClassName())) {
+                    re.decode(theParameters);
+                    responses.add(re);
+                }                
+            } catch (InvalidInteractionClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError | NameNotFound | OmtEncodingHelperException | DecoderException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    @Override
+    public void receiveInteraction(final InteractionClassHandle interactionClass, final ParameterHandleValueMap theParameters, final byte[] userSuppliedTag, final OrderType sentOrdering, final TransportationTypeHandle theTransport, final LogicalTime theTime, final OrderType receivedOrdering, final SupplementalReceiveInfo receiveInfo) throws FederateInternalError {
+        this.logger.warn("receiveInteraction not implemented");
+    }
+
+
+    @Override
+    public void receiveInteraction(final InteractionClassHandle interactionClass, final ParameterHandleValueMap theParameters, final byte[] userSuppliedTag, final OrderType sentOrdering, final TransportationTypeHandle theTransport, final LogicalTime theTime, final OrderType receivedOrdering, final MessageRetractionHandle retractionHandle, final SupplementalReceiveInfo receiveInfo) throws FederateInternalError {
+        this.logger.warn("receiveInteraction not implemented");
+    }
+
     @Override
     public void discoverObjectInstance(final ObjectInstanceHandle theObject, final ObjectClassHandle theObjectClass, final String objectName) throws FederateInternalError {
         try {
             String receivedClass = ivct_rti.getObjectClassName(theObjectClass);
             if (receivedClass.equals(new BaseEntity().getHlaClassName())) {
-                BaseEntity obj = new BaseEntity();
-                obj.setObjectHandle(theObject);
-                knownBaseEntities.put(theObject, obj);
+                if (!knownBaseEntities.keySet().contains(theObject)) {
+                    BaseEntity obj = new BaseEntity();
+                    obj.setObjectHandle(theObject);
+                    knownBaseEntities.put(theObject, obj);
+                }
             }             
         } catch (InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError | NameNotFound | EncoderException | OmtEncodingHelperException e) {
             throw new FederateInternalError(e.getMessage());
@@ -127,12 +176,20 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     @Override
     public void discoverObjectInstance(final ObjectInstanceHandle theObject, final ObjectClassHandle theObjectClass, final String objectName, final FederateHandle producingFederate) throws FederateInternalError {
         discoverObjectInstance(theObject, theObjectClass, objectName);
-        baseEntityFromSuT = checkSutHandle(producingFederate, theObject);
+        BaseEntity be = checkSutHandle(producingFederate, theObject);
+        if (be != null && !baseEntitiesFromSuT.contains(be)) {
+            requestAttributeValueUpdate(theObject);
+            baseEntitiesFromSuT.add(be);
+        }
     }    
 
     @Override
     public void informAttributeOwnership(final ObjectInstanceHandle theObject, final AttributeHandle theAttribute, final FederateHandle theOwner) throws FederateInternalError {
-        baseEntityFromSuT = checkSutHandle(theOwner, theObject);
+        BaseEntity be = checkSutHandle(theOwner, theObject);
+        if (be != null  && !baseEntitiesFromSuT.contains(be)) {
+            requestAttributeValueUpdate(theObject);
+            baseEntitiesFromSuT.add(be);
+        }
     }
 
     @SuppressWarnings("rawtypes")
@@ -161,41 +218,31 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             SupplementalReflectInfo reflectInfo) throws FederateInternalError {
         logger.trace("reflectAttributeValues without time");
         
-        if (baseEntityFromSuT == null) return;
-        if (!theObject.equals(baseEntityFromSuT.getObjectHandle())) return;
- 
+        if (baseEntitiesFromSuT.isEmpty()) return;
+        Optional<BaseEntity> obe = baseEntitiesFromSuT.stream().filter(be -> be.getObjectHandle() == theObject).findAny();
+        if (obe.isEmpty()) return;
+
+        BaseEntity baseEntityFromSuT = obe.get();
         baseEntityFromSuT.clear();
+
         try {
             baseEntityFromSuT.decode(theAttributes);
-            //
-            EntityControlActionsStruct supportedActions = baseEntityFromSuT.getSupportedActions();
-            for (HLAinteger32BE value : supportedActions) {
-                EntityControlActionEnum32 ev = EntityControlActionEnum32.get(value.getValue());
-                if (ev.equals(supportedAction2Test)) {
-                    // our SuT states that it supports the requested action
-                    requestedActionSupported = true;
-                    break;
-                }
-            }
-            //
-            ArrayOfTaskDefinitionsStruct currentTasks = baseEntityFromSuT.getCurrentTasks();
-            for (TaskDefinitionStruct tds : currentTasks) {
-                if (tds.getTaskId().equals(taskId2Test)) {
-                    requestedTaskIdFound = true;
-                    break;
-                }
-            }
-            //
-            ArrayOfTaskProgressStruct taskProgress = baseEntityFromSuT.getTaskProgress();
-            //
-            UUIDStruct uniqueId = baseEntityFromSuT.getUniqueId();
-            //
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected
                 | RTIinternalError | DecoderException e) {
             logger.error("reflectAttributeValues received Exception", e);
         }
     }
+
     // end of callback section
+    private boolean checkSuTHandle(FederateHandle fh) {
+        try {
+            FederateHandle sutHandle = ivct_rti.getFederateHandle(getSutFederateName());
+            return sutHandle.equals(fh);
+        } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     private BaseEntity checkSutHandle(FederateHandle theOwner, ObjectInstanceHandle theObject) {
 		try {
@@ -210,7 +257,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 		return null;
     }
 
-    private BaseEntity subscribeAttributes() throws TcInconclusiveIf {
+    private BaseEntity subscribeAttributes() throws TcInconclusive {
         try {
             // this is BaseEntity as defined in NETN-ETR
             // the additional attributes from RPR-BASE BaseEnetity are not available here
@@ -222,20 +269,29 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             baseEntity.subscribe();
             return baseEntity;
         } catch (Exception e) {
-            throw new TcInconclusiveIf(e.getMessage());
+            throw new TcInconclusive(e.getMessage());
         }
     }
 
-    private void publishInteractions() {
+    private void publishInteractions() throws TcInconclusive {
         try {
             MoveByRoute mbr = new MoveByRoute();
-            // mbr.publishTaskId();
-            // mbr.publishUniqueId();
             mbr.publish();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new TcInconclusive("Could not publish MoveByRoute interaction class.");
+        }
+    }
+
+    private void subscribeInteractions() throws TcInconclusive {
+        try {
+            SMC_Response resp = new SMC_Response();
+            resp.subscribe();
+            ETR_TaskStatus status = new ETR_TaskStatus();
+            status.subscribe();
+        } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | OmtEncodingHelperException | FederateServiceInvocationsAreBeingReportedViaMOM | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
+            throw new TcInconclusive("Could not subscribe to " + SMC_Response.class.getSimpleName());
         }
     }
 
@@ -258,31 +314,86 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         });        
     }
 
-    public BaseEntity getBaseEntityFromSuT() throws TcInconclusiveIf {
-
-        // wait for a BaseEntity from our SuT
-        waitWhile(executorService, () -> {return baseEntityFromSuT == null;}, "BaseEntity");
-
+    public void requestAttributeValueUpdate(ObjectInstanceHandle baseEntityFromSuT) {
         // trigger reflection of attributes for objectHandle of baseEntityFromSuT
         try {
-            ivct_rti.requestAttributeValueUpdate(baseEntityFromSuT.getObjectHandle(), subscribeAttributes().getSubscribedAttributes(), null);
+            ivct_rti.requestAttributeValueUpdate(baseEntityFromSuT, subscribedAttributes.getSubscribedAttributes(), null);
         } catch (AttributeNotDefined | ObjectInstanceNotKnown | SaveInProgress | RestoreInProgress
                 | FederateNotExecutionMember | NotConnected | RTIinternalError e) {
-            throw new TcInconclusiveIf(e.getMessage());
+            //
         }
-        return baseEntityFromSuT;
     }
 
-    public void testSupportedActions(EntityControlActionEnum32 sat) {
+    public void waitForBaseEntitiesFromSuT() {
         //
-        supportedAction2Test = sat;
-        waitWhile(executorService, () -> {return !requestedActionSupported;}, "Supported Actions");        
+        waitWhile(executorService, () -> {return baseEntitiesFromSuT.isEmpty();}, getSutFederateName());
     }
 
-    public void testCurrentTasks(UUIDStruct reqTaskId) {
+    // testing
+    public List<BaseEntity> waitForSupportedActions(EntityControlActionEnum32 sat) {
+        waitWhile(executorService, () -> {filterSupportedActions(sat);return baseEntitiesFromSuTWithSA.isEmpty();}, getSutFederateName());
+        return baseEntitiesFromSuTWithSA;
+    }
+
+    public void waitForSMC_Responses() {
+        waitWhile(executorService, () -> {return responses.isEmpty();}, getSutFederateName());
+    }
+
+    public void waitForETR_TaskStatus(int num) {
+        waitWhile(executorService, () -> {return taskStatusList.size() > (num - 1);}, getSutFederateName());
+    }
+
+    private void filterSupportedActions(EntityControlActionEnum32 sat) {
         //
-        taskId2Test = reqTaskId; 
-        waitWhile(executorService, () -> {return !requestedTaskIdFound;}, "Supported Actions");        
+        baseEntitiesFromSuTWithSA = baseEntitiesFromSuT.stream().filter(be -> {
+            boolean flag = false;
+            try {
+                EntityControlActionsStruct ec = be.getSupportedActions();
+                
+                for (HLAinteger32BE value : ec) {
+                    if (EntityControlActionEnum32.get(value.getValue()).equals(sat)) {
+                        flag = true;
+                        break;
+                    }
+                }
+            } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected
+                    | RTIinternalError | EncoderException | DecoderException e) {
+                e.printStackTrace();
+            }
+            return flag;
+        }).collect(Collectors.toList());
+    }
+
+    public boolean testCurrentTasks(BaseEntity be, UUIDStruct reqTaskId) {
+        //
+        boolean ret = false;
+        try {
+            ArrayOfTaskDefinitionsStruct currentTasks = be.getCurrentTasks();
+            for (TaskDefinitionStruct td : currentTasks) {
+                if (td.getTaskId().equals(reqTaskId)) {
+                    ret = true;
+                    break;
+                }
+            }
+        } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | EncoderException e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
+
+    public boolean testSMC_Response(UUIDStruct uid) {
+        Optional<SMC_Response> or = responses.stream().filter(r -> r.getAction().equals(uid)).findAny();
+        if (or.isEmpty()) return false;
+        return or.get().getStatus();
+    }
+
+    public TaskStatusEnum32 testETR_TaskStatus(UUIDStruct uid) throws EncoderException, DecoderException {
+        List<ETR_TaskStatus> l = taskStatusList.stream().filter(r -> r.getTask().equals(uid)).collect(Collectors.toList());
+        // fetch the last one
+        Collections.reverse(l);
+        if (l.isEmpty()) return null;
+        return l.get(0).getStatus();
     }
 
     public void terminate() {

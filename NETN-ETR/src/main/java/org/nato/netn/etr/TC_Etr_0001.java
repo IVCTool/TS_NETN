@@ -13,6 +13,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.util.List;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -23,6 +24,7 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 
 import hla.rti1516e.FederateHandle;
 import hla.rti1516e.encoding.ByteWrapper;
+import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.encoding.EncoderException;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
@@ -118,27 +120,40 @@ public class TC_Etr_0001 extends AbstractTestCase {
             return;
         }
         
-        // wait for a BaseEntity from our SuT
-        BaseEntity be = baseModel.getBaseEntityFromSuT();
-
         // test for SupportedActions from SuT
         String [] sa = netnTcParam.getSupportedActions();
         EntityControlActionEnum32 eca = EntityControlActionEnum32.valueOf(sa[0]);
         logger.info("Test step - test SuT if it supports " + sa);
-        baseModel.testSupportedActions(eca);
+        baseModel.waitForBaseEntitiesFromSuT();
+
+        // wait for a minimum of one BaseEntity with requested supported action
+        logger.info("Test step - test baseEntities from SuT if one of them supports " + sa);
+        List<BaseEntity> baseEntitiesFromSuT_SA = baseModel.waitForSupportedActions(eca);
         
+        // take the first one (it definitely exists) and task it
+        BaseEntity be = baseEntitiesFromSuT_SA.get(0);
+
         // test for task id, which is used to task entities of SuT
         String taskId = netnTcParam.getTaskId();
         try {
             UUIDStruct us = new UUIDStruct();
             us.encode(new ByteWrapper(taskId.getBytes()));
-            logger.info("Send MoveByRoute task with id " + us.toString() + " to " + be.getUniqueId());
-            baseModel.sendTask(us);
-            // TODO: test SMC_Response
-            // TODO: test ETR_Status
-            // test current tasks in BaseEntity
-            baseModel.testCurrentTasks(us);
-        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException e) {
+            logger.info("Send MoveByRoute task with id " + taskId + " to " + be.getUniqueId());
+            UUIDStruct interactionId = baseModel.sendTask(be, us);
+
+            // test SMC_Response, if task was accepted by SuT
+            baseModel.waitForSMC_Responses();
+            boolean accepted = baseModel.testSMC_Response(interactionId);
+            logger.info("SuT accepted task with taskId " + taskId + ": " +accepted);
+
+            if (accepted) {
+                // test ETR_Status, we can wait here for num updates
+                baseModel.waitForETR_TaskStatus(1);
+                logger.info("Status from task with id " + taskId + " is " + baseModel.testETR_TaskStatus(us));
+                // test current tasks in BaseEntity
+                logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
+            }
+        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException | DecoderException e) {
             throw new TcInconclusive(e.getMessage());
         }
     }

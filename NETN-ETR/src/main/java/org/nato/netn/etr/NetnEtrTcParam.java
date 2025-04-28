@@ -3,6 +3,8 @@ package org.nato.netn.etr;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -21,11 +23,37 @@ public class NetnEtrTcParam implements IVCT_TcParam {
     public static final String SUT_FEDERATE_NAME = "sutFederateName";
     public static final String SUT_SUPPRTED_ACTIONS = "supportedActions";
     public static final String SUT_TASK_ID = "taskId";
+    public static final String ROUTE = "route";
     
     private NetnFomFiles fomFiles;
-    //private ArrayList<URL> urls = new ArrayList<>();
 
     private JSONObject parameter;
+
+    public class Point2D {
+        private double x;
+        private double y;
+
+        public Point2D(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+        public double getX() {
+            return x;
+        }
+        public void setX(double x) {
+            this.x = x;
+        }
+        public double getY() {
+            return y;
+        }
+        public void setY(double y) {
+            this.y = y;
+        }
+        @Override
+        public String toString() {
+            return "(x: " + x + ", y: " + y + ")";
+        }
+    }
 
     public NetnEtrTcParam (String jsonParamString) throws TcInconclusive, ParseException, IOException {
 
@@ -81,6 +109,20 @@ public class NetnEtrTcParam implements IVCT_TcParam {
             throw new TcInconclusive("Parameter " + SUT_TASK_ID + " not set.");
         }
         return (String)o;        
+    }
+
+    public List<Point2D> getWaypoints() throws TcInconclusive {
+        Object o = parameter.get(ROUTE);
+        if (o == null) {
+            throw new TcInconclusive("Parameter " + ROUTE + " not set.");
+        }
+        JSONArray ja = (JSONArray)o;
+        return Arrays.stream(ja.toArray()).map(t -> {
+            JSONObject jo = (JSONObject)t;
+            double x = ((Number)jo.get("x")).doubleValue();
+            double y = ((Number)jo.get("y")).doubleValue();
+            return new Point2D(x,y);
+        }).collect(Collectors.toList());
     }
 
 }

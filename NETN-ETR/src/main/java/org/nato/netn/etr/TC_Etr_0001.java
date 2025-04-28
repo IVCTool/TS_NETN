@@ -73,6 +73,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
             throw new TcInconclusive("unable to initialize test case root", e);
         }
         baseModel = new NetnEtrIvctBaseModel(logger, netnTcParam);
+        // logger.info("Waypoints: " + netnTcParam.getWaypoints());
         baseModel.setSutFederateName(netnTcParam.getSutFederateName());
         baseModel.setFederationName(netnTcParam.getFederationName());
         this.setFederationName(netnTcParam.getFederationName());
@@ -140,7 +141,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
             UUIDStruct us = new UUIDStruct();
             us.encode(new ByteWrapper(taskId.getBytes()));
             logger.info("Send MoveByRoute task with id " + taskId + " to " + be.getUniqueId());
-            UUIDStruct interactionId = baseModel.sendTask(be, us);
+            UUIDStruct interactionId = baseModel.sendTask(be, us, netnTcParam.getWaypoints());
 
             // test SMC_Response, if task was accepted by SuT
             baseModel.waitForSMC_Responses();

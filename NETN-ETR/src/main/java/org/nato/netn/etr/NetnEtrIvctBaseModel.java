@@ -100,27 +100,24 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         subscribeInteractions();
     }
 
-    private MoveByRouteTaskStruct createTask() throws RTIinternalError {
+    private MoveByRouteTaskStruct createTask(List<NetnEtrTcParam.Point2D> waypoints) throws RTIinternalError {
         MoveByRouteTaskStruct t = new MoveByRouteTaskStruct(); // standard move type is CrossCountry
-        WaypointStruct wp1 = new WaypointStruct();
-        wp1.getLocation().setY(48.066);
-        wp1.getLocation().setX(11.649);
-        wp1.getLocation().setZ(0.0);
-        WaypointStruct wp2 = new WaypointStruct();
-        wp2.getLocation().setY(48.0684);
-        wp2.getLocation().setX(11.642);
-        wp2.getLocation().setZ(0.0);
-        t.getArrayOfWaypointsStruct().addElement(wp1);
-        t.getArrayOfWaypointsStruct().addElement(wp2);
+        for (NetnEtrTcParam.Point2D wpc : waypoints) {
+            WaypointStruct wp = new WaypointStruct();
+            wp.getLocation().setY(wpc.getY());
+            wp.getLocation().setX(wpc.getX());
+            wp.getLocation().setZ(0.0);        
+            t.getArrayOfWaypointsStruct().addElement(wp);   
+        }
         return t;
     }
 
     // returns UUID from MoveByRoute interaction
-    public UUIDStruct sendTask(BaseEntity be, UUIDStruct taskId) throws TcInconclusiveIf {
+    public UUIDStruct sendTask(BaseEntity be, UUIDStruct taskId, List<NetnEtrTcParam.Point2D> waypoints) throws TcInconclusiveIf {
         UUIDStruct uniqueId = null;
         try {
             MoveByRoute mbr = new MoveByRoute();
-            mbr.setTaskParameters(createTask());
+            mbr.setTaskParameters(createTask(waypoints));
             uniqueId = new UUIDStruct();
             UUID u = UUID.randomUUID();
             uniqueId.encode(new ByteWrapper(u.toString().getBytes()));

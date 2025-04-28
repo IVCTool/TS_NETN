@@ -109,6 +109,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
         // Initiate rti: connect and join
         logger.info("SUT federate: " + baseModel.getSutFederateName());
         federateHandle = baseModel.initiateRti(this.getClass().getSimpleName(), ivct_LoggingFederateAmbassador);
+        baseModel.registerPubSub(federateHandle);
     }
 
     @Override
@@ -123,7 +124,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
         // test for SupportedActions from SuT
         String [] sa = netnTcParam.getSupportedActions();
         EntityControlActionEnum32 eca = EntityControlActionEnum32.valueOf(sa[0]);
-        logger.info("Test step - test SuT if it supports " + sa);
+        logger.info("Test step - test SuT if it supports " + sa[0]);
         baseModel.waitForBaseEntitiesFromSuT();
 
         // wait for a minimum of one BaseEntity with requested supported action
@@ -152,6 +153,8 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 logger.info("Status from task with id " + taskId + " is " + baseModel.testETR_TaskStatus(us));
                 // test current tasks in BaseEntity
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
+                baseModel.waitForObservationReportsFromSuT();
+                logger.info("Reports so far: " + baseModel.getReportIds());
             }
         } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException | DecoderException e) {
             throw new TcInconclusive(e.getMessage());

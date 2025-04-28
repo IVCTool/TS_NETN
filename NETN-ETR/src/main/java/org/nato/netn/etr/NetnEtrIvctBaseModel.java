@@ -7,8 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
@@ -22,6 +25,8 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.WaypointStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ObservationReport;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.PositionStatusReport;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_Response;
 import org.slf4j.Logger;
@@ -74,6 +79,8 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     private List<BaseEntity> baseEntitiesFromSuTWithSA;
     private List<ETR_TaskStatus> taskStatusList = new ArrayList<>();
     private List<SMC_Response> responses = new ArrayList<>();
+    private List<ObservationReport> reports = new ArrayList<>();
+    private List<PositionStatusReport> positions = new ArrayList<>();
     private static long RESCHEDULE = 500;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private BaseEntity subscribedAttributes;
@@ -82,6 +89,12 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         super(logger, ivct_TcParam);
         this.logger = logger;
         BaseEntity.initialize(ivct_rti);
+    }
+
+    public void registerPubSub(FederateHandle fh) throws TcInconclusive {
+        if (fh == null) {
+            throw new TcInconclusive("Call initializeRTI first.");
+        }
         subscribedAttributes = subscribeAttributes();
         publishInteractions();
         subscribeInteractions();
@@ -128,16 +141,30 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         if (checkSuTHandle(receiveInfo.getProducingFederate())) {
             try {
                 String receivedClass = ivct_rti.getInteractionClassName(interactionClass);
+                //
                 ETR_TaskStatus ts = new ETR_TaskStatus();
                 if (receivedClass.equals(ts.getHlaClassName())) {
                     ts.decode(theParameters);
                     taskStatusList.add(ts);
                 }
+                //
                 SMC_Response re = new SMC_Response();
                 if (receivedClass.equals(re.getHlaClassName())) {
                     re.decode(theParameters);
                     responses.add(re);
-                }                
+                }
+                //
+                ObservationReport or = new ObservationReport();
+                if (receivedClass.equals(or.getHlaClassName())) {
+                    or.decode(theParameters);
+                    reports.add(or);
+                }
+                //
+                PositionStatusReport psr = new PositionStatusReport();
+                if (receivedClass.equals(psr.getHlaClassName())) {
+                    psr.decode(theParameters);
+                    positions.add(psr);
+                }
             } catch (InvalidInteractionClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError | NameNotFound | OmtEncodingHelperException | DecoderException e) {
                 e.printStackTrace();
             }
@@ -269,6 +296,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             baseEntity.subscribe();
             return baseEntity;
         } catch (Exception e) {
+            e.printStackTrace();
             throw new TcInconclusive(e.getMessage());
         }
     }
@@ -289,13 +317,17 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             resp.subscribe();
             ETR_TaskStatus status = new ETR_TaskStatus();
             status.subscribe();
+            ObservationReport or = new ObservationReport();
+            or.subscribe();
+            PositionStatusReport psr = new PositionStatusReport();
+            psr.subscribe();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | FederateServiceInvocationsAreBeingReportedViaMOM | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
             throw new TcInconclusive("Could not subscribe to " + SMC_Response.class.getSimpleName());
         }
     }
 
-    private void waitWhile(ExecutorService executorService, Callback f, String rs) {
+    private void waitWhile(ExecutorService executorService, Callback f, String rs, int timeout) {
         CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> {
             try {
                 while (f.call()) {Thread.sleep(RESCHEDULE);}
@@ -311,7 +343,14 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         .exceptionally(throwable -> {
             logger.error("Error occurred in : waitForSupportedActions.f1 " + throwable.getMessage());
             return null;
-        });        
+        });
+        try {
+            // block here
+            if (timeout > 0) f1.get(timeout, TimeUnit.SECONDS);
+            else f1.get();
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+        } 
     }
 
     public void requestAttributeValueUpdate(ObjectInstanceHandle baseEntityFromSuT) {
@@ -326,21 +365,26 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 
     public void waitForBaseEntitiesFromSuT() {
         //
-        waitWhile(executorService, () -> {return baseEntitiesFromSuT.isEmpty();}, getSutFederateName());
+        waitWhile(executorService, () -> {return baseEntitiesFromSuT.isEmpty();}, "BaseEntity", -1);
     }
 
     // testing
     public List<BaseEntity> waitForSupportedActions(EntityControlActionEnum32 sat) {
-        waitWhile(executorService, () -> {filterSupportedActions(sat);return baseEntitiesFromSuTWithSA.isEmpty();}, getSutFederateName());
+        waitWhile(executorService, () -> {filterSupportedActions(sat);return baseEntitiesFromSuTWithSA.isEmpty();}, "Supported actions", -1);
         return baseEntitiesFromSuTWithSA;
     }
 
     public void waitForSMC_Responses() {
-        waitWhile(executorService, () -> {return responses.isEmpty();}, getSutFederateName());
+        waitWhile(executorService, () -> {return responses.isEmpty();}, "SMC_Reponses", -1);
     }
 
     public void waitForETR_TaskStatus(int num) {
-        waitWhile(executorService, () -> {return taskStatusList.size() > (num - 1);}, getSutFederateName());
+        waitWhile(executorService, () -> {return taskStatusList.size() > (num - 1);}, "ETR_TaskStatus", -1);
+    }
+
+    public void waitForObservationReportsFromSuT() {
+        // set timeout here!
+        waitWhile(executorService, () -> {return reports.isEmpty();}, "ObservationReport", 5);
     }
 
     private void filterSupportedActions(EntityControlActionEnum32 sat) {
@@ -394,6 +438,10 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         Collections.reverse(l);
         if (l.isEmpty()) return null;
         return l.get(0).getStatus();
+    }
+
+    public List<String> getReportIds() {
+        return reports.stream().map(r -> r.getReportId().toString()).collect(Collectors.toList());
     }
 
     public void terminate() {

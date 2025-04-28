@@ -1,7 +1,6 @@
 package org.nato.netn.etr;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -13,14 +12,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskDefinitionsStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct;
-import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskDefinitionStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskProgress;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskProgressVariantRecord;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.WaypointStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
@@ -375,8 +377,8 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         waitWhile(executorService, () -> {return responses.isEmpty();}, "SMC_Reponses", -1);
     }
 
-    public void waitForETR_TaskStatus(int num) {
-        waitWhile(executorService, () -> {return taskStatusList.size() > (num - 1);}, "ETR_TaskStatus", -1);
+    public void waitForETR_TaskStatus(UUIDStruct taskId, TaskStatusEnum32 ts) {
+        waitWhile(executorService, () -> {return testETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus", -1);
     }
 
     public void waitForObservationReportsFromSuT() {
@@ -410,14 +412,30 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         boolean ret = false;
         try {
             ArrayOfTaskDefinitionsStruct currentTasks = be.getCurrentTasks();
-            for (TaskDefinitionStruct td : currentTasks) {
-                if (td.getTaskId().equals(reqTaskId)) {
+            return StreamSupport.stream(currentTasks.spliterator(), false).filter(ct -> ct.getTaskId().equals(reqTaskId)).findAny().isPresent();
+        } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | EncoderException e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
+
+    public boolean testTaskProgress(BaseEntity be, UUIDStruct reqTaskId, EntityControlActionEnum32 eca) {
+        //
+        boolean ret = false;
+        try {
+            ArrayOfTaskProgressStruct taskProgress = be.getTaskProgress();
+            List<TaskProgress> tpl = StreamSupport.stream(taskProgress.spliterator(), false).filter(tp -> tp.getXTaskId().equals(reqTaskId)).collect(Collectors.toList());
+            for (TaskProgress tp : tpl) {
+                TaskProgressVariantRecord rec = tp.getProgressData();
+                EntityControlActionEnum32 disc = EntityControlActionEnum32.get(rec.getDiscriminant().getValue());
+                if (disc.equals(eca)) {
                     ret = true;
-                    break;
                 }
             }
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
-                | EncoderException e) {
+                | EncoderException | DecoderException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return ret;
@@ -429,12 +447,14 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         return or.get().getStatus();
     }
 
-    public TaskStatusEnum32 testETR_TaskStatus(UUIDStruct uid) throws EncoderException, DecoderException {
-        List<ETR_TaskStatus> l = taskStatusList.stream().filter(r -> r.getTask().equals(uid)).collect(Collectors.toList());
-        // fetch the last one
-        Collections.reverse(l);
-        if (l.isEmpty()) return null;
-        return l.get(0).getStatus();
+    private boolean testETR_TaskStatus(UUIDStruct uid, TaskStatusEnum32 ts) {
+        return taskStatusList.stream().filter(r -> {
+            try {
+                return r.getTask().equals(uid) && r.getStatus().equals(ts);
+            } catch (EncoderException | DecoderException e) {
+                return false;
+            }
+        }).findAny().isPresent();
     }
 
     public List<String> getReportIds() {

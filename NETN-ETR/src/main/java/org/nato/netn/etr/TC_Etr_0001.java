@@ -20,11 +20,11 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 
 import hla.rti1516e.FederateHandle;
 import hla.rti1516e.encoding.ByteWrapper;
-import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.encoding.EncoderException;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
@@ -146,18 +146,21 @@ public class TC_Etr_0001 extends AbstractTestCase {
             // test SMC_Response, if task was accepted by SuT
             baseModel.waitForSMC_Responses();
             boolean accepted = baseModel.testSMC_Response(interactionId);
-            logger.info("SuT accepted task with taskId " + taskId + ": " +accepted);
+            logger.info("SuT responded to task with taskId " + taskId + ": " + accepted);
 
             if (accepted) {
-                // test ETR_Status, we can wait here for num updates
-                baseModel.waitForETR_TaskStatus(1);
-                logger.info("Status from task with id " + taskId + " is " + baseModel.testETR_TaskStatus(us));
-                // test current tasks in BaseEntity
+                // test ETR_Status for accepted, executing
+                baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Accepted);
+                logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Accepted);
+                baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Executing);
+                logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Executing);                
+                // test current tasks and task progress in BaseEntity
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
+                logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca));
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());
             }
-        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException | DecoderException e) {
+        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException e) {
             throw new TcInconclusive(e.getMessage());
         }
     }

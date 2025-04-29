@@ -292,12 +292,8 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 
     private BaseEntity subscribeAttributes() throws TcInconclusive {
         try {
-            // this is BaseEntity as defined in NETN FOM v4.0 in NETN-ETR module
-            // the additional attributes (Spatial, EntityType, EntityIdentifier) 
-            // from RPR-BASE BaseEntity are not available in the ETR module
-            // but they are available in NETN-ENTITY, where it makes sense.
-            // Nonetheless the OMT encoding helper must derive ETR BaseEntity from RPR-BASE BaseEntity,
-            // cause java does not support multiple inheritance of classes or mixins
+            // to see how class object merging works, refer to 
+            // B. Möller et al., Extended FOM Module Merging Capabilities, 2013
             BaseEntity baseEntity = new BaseEntity();
             baseEntity.subscribeSupportedActions();
             baseEntity.subscribeCurrentTasks();
@@ -336,7 +332,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             psr.subscribe();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | FederateServiceInvocationsAreBeingReportedViaMOM | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
-            throw new TcInconclusive("Could not subscribe to " + SMC_Response.class.getSimpleName());
+            throw new TcInconclusive("Could not subscribe to one of {SMC_Response, ETR_TaskStatus, ObservationReort, PositionStatusReport}");
         }
     }
 
@@ -403,57 +399,52 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     private void filterSupportedActions(EntityControlActionEnum32 sat) {
         //
         baseEntitiesFromSuTWithSA = baseEntitiesFromSuT.stream().filter(be -> {
-            boolean flag = false;
             try {
-                EntityControlActionsStruct ec = be.getSupportedActions();
-                
-                for (HLAinteger32BE value : ec) {
-                    if (EntityControlActionEnum32.get(value.getValue()).equals(sat)) {
-                        flag = true;
-                        break;
+                return StreamSupport.stream(be.getSupportedActions().spliterator(), false).filter(v -> {
+                    try {
+                        return EntityControlActionEnum32.get(v.getValue()).equals(sat);
+                    } catch (DecoderException e) {
+                        return false;
                     }
-                }
+                }).findAny().isPresent();
             } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected
-                    | RTIinternalError | EncoderException | DecoderException e) {
-                e.printStackTrace();
+                    | RTIinternalError | EncoderException e) {
+                return false;
             }
-            return flag;
         }).collect(Collectors.toList());
     }
 
     public boolean testCurrentTasks(BaseEntity be, UUIDStruct reqTaskId) {
         //
-        boolean ret = false;
         try {
-            ArrayOfTaskDefinitionsStruct currentTasks = be.getCurrentTasks();
-            return StreamSupport.stream(currentTasks.spliterator(), false).filter(ct -> ct.getTaskId().equals(reqTaskId)).findAny().isPresent();
+            return StreamSupport.stream(be.getCurrentTasks().spliterator(), false).filter(
+                ct -> ct.getTaskId().equals(reqTaskId)
+                ).findAny().isPresent();
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | EncoderException e) {
             e.printStackTrace();
         }
-        return ret;
+        return false;
     }
 
     public boolean testTaskProgress(BaseEntity be, UUIDStruct reqTaskId, EntityControlActionEnum32 eca, Class<?> cls) {
         //
-        boolean ret = false;
         try {
-            ArrayOfTaskProgressStruct taskProgress = be.getTaskProgress();
-            List<TaskProgress> tpl = StreamSupport.stream(taskProgress.spliterator(), false).filter(tp -> tp.getXTaskId().equals(reqTaskId)).collect(Collectors.toList());
-            for (TaskProgress tp : tpl) {
+            return StreamSupport.stream(be.getTaskProgress().spliterator(), false).filter(tp -> tp.getXTaskId().equals(reqTaskId)).filter(tp -> {
                 TaskProgressVariantRecord rec = tp.getProgressData();
-                EntityControlActionEnum32 disc = EntityControlActionEnum32.get(rec.getDiscriminant().getValue());
-                DataElement de = rec.getDataElement().getValue();
-                if (disc.equals(eca) && de.getClass().equals(cls)) {
-                    ret = true;
+                try {
+                    EntityControlActionEnum32 disc = EntityControlActionEnum32.get(rec.getDiscriminant().getValue());
+                    DataElement de = rec.getDataElement().getValue();
+                    return (disc.equals(eca) && de.getClass().equals(cls));                    
+                } catch (DecoderException e) {
+                    return false;
                 }
-            }
+            }).findAny().isPresent();
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
-                | EncoderException | DecoderException e) {
-            // TODO Auto-generated catch block
+                | EncoderException e) {
             e.printStackTrace();
         }
-        return ret;
+        return false;
     }
 
     public boolean testSMC_Response(UUIDStruct uid) {

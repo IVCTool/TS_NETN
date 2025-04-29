@@ -31,6 +31,11 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ObservationReport;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.PositionStatusReport;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_Response;
+import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.EntityIdentifierStruct;
+import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.EntityTypeStruct;
+import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.FederateIdentifierStruct;
+import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.SpatialVariantStruct;
+import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.WorldLocationStruct;
 import org.slf4j.Logger;
 
 import de.fraunhofer.iosb.tc_lib.IVCT_BaseModel;
@@ -49,8 +54,10 @@ import hla.rti1516e.OrderType;
 import hla.rti1516e.ParameterHandleValueMap;
 import hla.rti1516e.TransportationTypeHandle;
 import hla.rti1516e.encoding.ByteWrapper;
+import hla.rti1516e.encoding.DataElement;
 import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.encoding.EncoderException;
+import hla.rti1516e.encoding.HLAfixedRecord;
 import hla.rti1516e.encoding.HLAinteger32BE;
 import hla.rti1516e.exceptions.AttributeNotDefined;
 import hla.rti1516e.exceptions.FederateInternalError;
@@ -285,17 +292,24 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 
     private BaseEntity subscribeAttributes() throws TcInconclusive {
         try {
-            // this is BaseEntity as defined in NETN-ETR
-            // the additional attributes from RPR-BASE BaseEnetity are not available here
+            // this is BaseEntity as defined in NETN FOM v4.0 in NETN-ETR module
+            // the additional attributes (Spatial, EntityType, EntityIdentifier) 
+            // from RPR-BASE BaseEntity are not available in the ETR module
+            // but they are available in NETN-ENTITY, where it makes sense.
+            // Nonetheless the OMT encoding helper must derive ETR BaseEntity from RPR-BASE BaseEntity,
+            // cause java does not support multiple inheritance of classes or mixins
             BaseEntity baseEntity = new BaseEntity();
             baseEntity.subscribeSupportedActions();
             baseEntity.subscribeCurrentTasks();
             baseEntity.subscribeTaskProgress();
             baseEntity.subscribeUniqueId();
+            // additional attributes from RPR-BASE BaseEntity
+            baseEntity.subscribeEntityType();
+            baseEntity.subscribeEntityIdentifier();
+            baseEntity.subscribeSpatial();
             baseEntity.subscribe();
             return baseEntity;
         } catch (Exception e) {
-            e.printStackTrace();
             throw new TcInconclusive(e.getMessage());
         }
     }
@@ -420,7 +434,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         return ret;
     }
 
-    public boolean testTaskProgress(BaseEntity be, UUIDStruct reqTaskId, EntityControlActionEnum32 eca) {
+    public boolean testTaskProgress(BaseEntity be, UUIDStruct reqTaskId, EntityControlActionEnum32 eca, Class<?> cls) {
         //
         boolean ret = false;
         try {
@@ -429,7 +443,8 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             for (TaskProgress tp : tpl) {
                 TaskProgressVariantRecord rec = tp.getProgressData();
                 EntityControlActionEnum32 disc = EntityControlActionEnum32.get(rec.getDiscriminant().getValue());
-                if (disc.equals(eca)) {
+                DataElement de = rec.getDataElement().getValue();
+                if (disc.equals(eca) && de.getClass().equals(cls)) {
                     ret = true;
                 }
             }
@@ -459,6 +474,39 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 
     public List<String> getReportIds() {
         return reports.stream().map(r -> r.getReportId().toString()).collect(Collectors.toList());
+    }
+
+    public String toString(EntityTypeStruct et) {
+        return ("EntityType: (" + 
+            "Kind: " + (int)et.getEntityKind() + ", " + 
+            "Domain: " + (int)et.getDomain() + "," + 
+            "CountryCode: " + et.getCountryCode() + ", " + 
+            "Category: " + (int)et.getCategory() + ", " +
+            "Subcategory: " + (int)et.getSubcategory() + ", " +
+        ")");        
+    }
+
+    public String toString(EntityIdentifierStruct eis) {
+        FederateIdentifierStruct fi = eis.getFederateIdentifier();
+        return "EntityIdentifier: (" + 
+            "EintityNumber: " + eis.getEntityNumber() + ", " + 
+            "FederteIdentifier: (" + 
+                "SiteID: " + fi.getSiteID() + 
+                "ApplicationID: " + fi.getApplicationID() +
+            ")" +
+        ")";
+    }
+
+    public String toString(SpatialVariantStruct svs) {
+        HLAfixedRecord fr = (HLAfixedRecord)svs.getDataElement().getValue();
+        WorldLocationStruct loc = (WorldLocationStruct)fr.get(0);
+        return "Spatial: (" +
+            "Position: " + "(" +
+                "X: " + loc.getX() + ", " + 
+                "Y: " + loc.getY() + ", " + 
+                "Z: " + loc.getZ() + ", " +
+            ")" + 
+        ")";
     }
 
     public void terminate() {

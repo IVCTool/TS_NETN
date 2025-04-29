@@ -20,9 +20,9 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
-
 import hla.rti1516e.FederateHandle;
 import hla.rti1516e.encoding.ByteWrapper;
 import hla.rti1516e.encoding.EncoderException;
@@ -153,12 +153,19 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Accepted);
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Accepted);
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Executing);
-                logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Executing);                
+                logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Executing);     
+                // log RPR-BASE attributes
+                logger.info(baseModel.toString(be.getEntityType()));
+                logger.info(baseModel.toString(be.getEntityIdentifier()));
+                logger.info(baseModel.toString(be.getSpatial()));
                 // test current tasks and task progress in BaseEntity
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
-                logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca));
+                logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca, MoveTaskProgressStruct.class));
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());
+                baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Completed);
+                logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Completed);
+                logger.info(baseModel.toString(be.getSpatial()));
             }
         } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException e) {
             throw new TcInconclusive(e.getMessage());

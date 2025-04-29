@@ -71,7 +71,7 @@ public class NetnEtrTcParam implements IVCT_TcParam {
         //     }
         // }
         fomFiles = new NetnFomFiles();
-        fomFiles.addNetnBase().addNetnEtr().addNetnSmc();
+        fomFiles.addNetnBase().addNetnEtr().addNetnSmc().addRPR_BASE();
     }
 
     @Override

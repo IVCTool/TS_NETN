@@ -141,7 +141,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
             UUIDStruct us = new UUIDStruct();
             us.encode(new ByteWrapper(taskId.getBytes()));
             logger.info("Send MoveByRoute task with id " + taskId + " to " + be.getUniqueId());
-            UUIDStruct interactionId = baseModel.sendTask(be, us, netnTcParam.getWaypoints());
+            UUIDStruct interactionId = baseModel.sendTask(be, us, netnTcParam.getWaypoints(), netnTcParam.getSpeed());
 
             // test SMC_Response, if task was accepted by SuT
             baseModel.waitForSMC_Responses();

@@ -24,6 +24,7 @@ public class NetnEtrTcParam implements IVCT_TcParam {
     public static final String SUT_SUPPRTED_ACTIONS = "supportedActions";
     public static final String SUT_TASK_ID = "taskId";
     public static final String ROUTE = "route";
+    public static final String SPEED = "speed";
     
     private NetnFomFiles fomFiles;
 
@@ -109,6 +110,13 @@ public class NetnEtrTcParam implements IVCT_TcParam {
             throw new TcInconclusive("Parameter " + SUT_TASK_ID + " not set.");
         }
         return (String)o;        
+    }
+    public float getSpeed() throws TcInconclusive {
+        Object o = parameter.get(SPEED);
+        if (o == null) {
+            throw new TcInconclusive("Parameter " + SPEED + " not set.");
+        }
+        return((Number)o).floatValue();        
     }
 
     public List<Point2D> getWaypoints() throws TcInconclusive {

@@ -17,8 +17,12 @@ import java.util.stream.StreamSupport;
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ElapsedTimeProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.FireTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.PatrolTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskProgressVariantRecord;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.WaypointStruct;
@@ -424,7 +428,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         return false;
     }
 
-    public boolean testTaskProgress(BaseEntity be, UUIDStruct reqTaskId, EntityControlActionEnum32 eca, Class<?> cls) {
+    public boolean testTaskProgress(BaseEntity be, UUIDStruct reqTaskId, EntityControlActionEnum32 eca) {
         //
         try {
             return StreamSupport.stream(be.getTaskProgress().spliterator(), false).filter(tp -> tp.getXTaskId().equals(reqTaskId)).anyMatch(tp -> {
@@ -432,6 +436,27 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                 try {
                     EntityControlActionEnum32 disc = EntityControlActionEnum32.get(rec.getDiscriminant().getValue());
                     DataElement de = rec.getDataElement().getValue();
+                    Class<?> cls = null;
+                    switch (eca) {
+                        case OperateCheckpoint: 
+                        case OtherActivity: 
+                        case FollowEntity: 
+                        case MoveInDirection: 
+                        case OperateObservationPost: 
+                            cls = ElapsedTimeProgressStruct.class; 
+                            break;
+                        case DirectFire: case IndirectFire: 
+                            cls = FireTaskProgressStruct.class; 
+                            break;
+                        case MoveToLocation: case MoveByRoute: 
+                            cls = MoveTaskProgressStruct.class;
+                            break;
+                        case Patrol:
+                            cls = PatrolTaskProgressStruct.class;
+                        break;
+                        // other EntityControlActions have no task progress, see TaskProgressVariantRecord
+                        default: break;                        
+                    }
                     return (disc.equals(eca) && de.getClass().equals(cls));                    
                 } catch (DecoderException e) {
                     return false;

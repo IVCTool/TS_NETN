@@ -141,6 +141,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
             UUIDStruct us = new UUIDStruct();
             us.encode(new ByteWrapper(taskId.getBytes()));
             logger.info("Send MoveByRoute task with id " + taskId + " to " + be.getUniqueId());
+            // this sendTask is for convenience and MoveByRoute specific, add others if needed
             UUIDStruct interactionId = baseModel.sendTask(be, us, netnTcParam.getWaypoints(), netnTcParam.getSpeed());
 
             // test SMC_Response, if task was accepted by SuT
@@ -160,7 +161,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 logger.info(baseModel.toString(be.getSpatial()));
                 // test current tasks and task progress in BaseEntity
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
-                logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca, MoveTaskProgressStruct.class));
+                logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca));
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Completed);

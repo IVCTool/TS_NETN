@@ -19,6 +19,19 @@ The test suites modules are aligned to the badge structure.
 
 ![Badges](docs/src/badge-dependencies.png)
 
+## Testing with Booster
+
+Booster Config for PITIS-223 Test Environment:
+- crc.PITIS-223@localhost:8688
+
+local pRTI
+- localhost:8989
+
+These settings may be set via the SettingsDesignator setter of the test case object ("_tc_"), like 
+
+    tc.setSettingsDesignator("crcAddress=localhost:8989");
+
+or via the LRC.settings within the pRTI installation setup.
 
 ## LICENCE
 

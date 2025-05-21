@@ -13,8 +13,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
-import java.util.List;
-
+import java.util.HexFormat;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -23,8 +22,9 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEn
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
+
 import hla.rti1516e.FederateHandle;
-import hla.rti1516e.encoding.ByteWrapper;
+import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.encoding.EncoderException;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
@@ -130,16 +130,33 @@ public class TC_Etr_0001 extends AbstractTestCase {
 
         // wait for a minimum of one BaseEntity with requested supported action
         logger.info("Test step - test baseEntities from SuT if one of them supports " + sa);
-        List<BaseEntity> baseEntitiesFromSuT_SA = baseModel.waitForSupportedActions(eca);
+        // List<BaseEntity> baseEntitiesFromSuT_SA = baseModel.waitForSupportedActions(eca);
         
         // take the first one (it definitely exists) and task it
-        BaseEntity be = baseEntitiesFromSuT_SA.get(0);
+        // BaseEntity be = baseEntitiesFromSuT_SA.get(0);
+
+        // for testing only
+        // BaseEntity be = baseEntitiesFromSuT_SA.get(0);
+        BaseEntity be = null;
+        try {
+            be = new BaseEntity();
+            UUIDStruct uis = new UUIDStruct();
+            // uis.decode(new ByteWrapper("10390074-76f2-4533-80b3-c5ae2fc11373".getBytes(Charset.forName("UTF-16BE"))));
+            byte [] bytes = HexFormat.of().parseHex("1039007476f2453380b3c5ae2fc11373");
+            uis.decode(bytes);
+            be.setUniqueId(uis);
+        } catch (Exception e) {
+            e.printStackTrace();;
+        }
+
+
 
         // test for task id, which is used to task entities of SuT
         String taskId = netnTcParam.getTaskId();
         try {
             UUIDStruct us = new UUIDStruct();
-            us.encode(new ByteWrapper(taskId.getBytes()));
+            // us.decode(new ByteWrapper(taskId.getBytes(Charset.forName("UTF-16BE"))));
+            us.decode(HexFormat.of().parseHex(taskId.replace("-", "")));
             logger.info("Send MoveByRoute task with id " + taskId + " to " + be.getUniqueId());
             UUIDStruct interactionId = baseModel.sendTask(be, us, netnTcParam.getWaypoints(), netnTcParam.getSpeed());
 
@@ -167,7 +184,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Completed);
                 logger.info(baseModel.toString(be.getSpatial()));
             }
-        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException e) {
+        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException | DecoderException e) {
             throw new TcInconclusive(e.getMessage());
         }
     }

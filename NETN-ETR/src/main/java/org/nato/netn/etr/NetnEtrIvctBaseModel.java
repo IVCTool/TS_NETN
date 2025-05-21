@@ -1,7 +1,9 @@
 package org.nato.netn.etr;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -131,13 +133,14 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             mbr.setTaskParameters(createTask(waypoints, speed));
             uniqueId = new UUIDStruct();
             UUID u = UUID.randomUUID();
-            uniqueId.encode(new ByteWrapper(u.toString().getBytes()));
+            uniqueId.decode(HexFormat.of().parseHex(u.toString().replace("-", "")));
             mbr.setUniqueId(uniqueId);
             mbr.setTaskId(uniqueId);
+            mbr.setTasker(uniqueId);
             mbr.setEntity(be.getUniqueId());
             mbr.send();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
-                | OmtEncodingHelperException | InteractionClassNotPublished | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress | InvalidObjectClassHandle | EncoderException e) {
+                | OmtEncodingHelperException | InteractionClassNotPublished | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress | InvalidObjectClassHandle | EncoderException | DecoderException e) {
             throw new TcInconclusiveIf("Could not send task MoveByRoute.");
         }
         return uniqueId;
@@ -146,7 +149,8 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     // callback section
     @Override
     public void receiveInteraction(final InteractionClassHandle interactionClass, final ParameterHandleValueMap theParameters, final byte[] userSuppliedTag, final OrderType sentOrdering, final TransportationTypeHandle theTransport, final SupplementalReceiveInfo receiveInfo) throws FederateInternalError {
-        if (checkSuTHandle(receiveInfo.getProducingFederate())) {
+        // if (checkSuTHandle(receiveInfo.getProducingFederate())) {
+        if (true) {
             try {
                 String receivedClass = ivct_rti.getInteractionClassName(interactionClass);
                 //
@@ -154,24 +158,28 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                 if (receivedClass.equals(ts.getHlaClassName())) {
                     ts.decode(theParameters);
                     taskStatusList.add(ts);
+                    logger.trace("ETR_TaskStatus received: " + ts.getTask() + " " + ts.getStatus());
                 }
                 //
                 SMC_Response re = new SMC_Response();
                 if (receivedClass.equals(re.getHlaClassName())) {
                     re.decode(theParameters);
                     responses.add(re);
+                    logger.trace("SMC_Response received: " + re.getAction() + " " + re.getStatus());
                 }
                 //
                 ObservationReport or = new ObservationReport();
                 if (receivedClass.equals(or.getHlaClassName())) {
                     or.decode(theParameters);
                     reports.add(or);
+                    logger.trace("ObservationReport received: " + or.getReportId());
                 }
                 //
                 PositionStatusReport psr = new PositionStatusReport();
                 if (receivedClass.equals(psr.getHlaClassName())) {
                     psr.decode(theParameters);
                     positions.add(psr);
+                    logger.trace("PositionStatusReport received: " + psr.getHeading() + " " + psr.getPosition() + " " + psr.getSpeed());
                 }
             } catch (InvalidInteractionClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError | NameNotFound | OmtEncodingHelperException | DecoderException e) {
                 e.printStackTrace();
@@ -200,6 +208,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                     BaseEntity obj = new BaseEntity();
                     obj.setObjectHandle(theObject);
                     knownBaseEntities.put(theObject, obj);
+                    baseEntitiesFromSuT.add(obj);
                 }
             }             
         } catch (InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError | NameNotFound | EncoderException | OmtEncodingHelperException e) {

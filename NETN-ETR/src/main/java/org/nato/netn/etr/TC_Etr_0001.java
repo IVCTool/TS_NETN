@@ -183,6 +183,8 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Completed);
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Completed);
                 logger.info(baseModel.toString(be.getSpatial()));
+            } else {
+                throw new TcInconclusive("Task " + taskId + " was not accepted");
             }
         } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException | DecoderException e) {
             throw new TcInconclusive(e.getMessage());

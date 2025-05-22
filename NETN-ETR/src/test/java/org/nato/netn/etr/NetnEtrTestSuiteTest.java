@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ServiceLoader;
 
 import org.json.simple.parser.ParseException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import de.fraunhofer.iosb.tc_lib_if.AbstractTestCaseIf;
 import de.fraunhofer.iosb.tc_lib_if.IVCT_Verdict;
@@ -54,6 +55,7 @@ public class NetnEtrTestSuiteTest {
     }
 
     @Test
+    @Tag("Pitis")
     void testPITIS223() throws FileNotFoundException, IOException, ParseException {
         log.trace("Main test");
         NetnEtrTestSuite ts = new NetnEtrTestSuite();

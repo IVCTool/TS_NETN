@@ -44,6 +44,7 @@ import de.fraunhofer.iosb.tc_lib.IVCT_BaseModel;
 import de.fraunhofer.iosb.tc_lib.IVCT_TcParam;
 import de.fraunhofer.iosb.tc_lib.TcInconclusive;
 import de.fraunhofer.iosb.tc_lib_if.TcInconclusiveIf;
+import edu.nps.moves.disutil.CoordinateConversions;
 import hla.rti1516e.AttributeHandle;
 import hla.rti1516e.AttributeHandleValueMap;
 import hla.rti1516e.FederateHandle;
@@ -115,8 +116,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         MoveByRouteTaskStruct t = new MoveByRouteTaskStruct(); // standard move type is CrossCountry
         for (NetnEtrTcParam.Point2D wpc : waypoints) {
             WaypointStruct wp = new WaypointStruct();
-            wp.getLocation().setY(wpc.getY());
-            wp.getLocation().setX(wpc.getX());
+            double [] wcs = CoordinateConversions.getXYZfromLatLonDegrees(wpc.getX(), wpc.getY(), 0.0);
+            wp.getLocation().setY(wcs[0];
+            wp.getLocation().setX(wcs[1]);
             wp.getLocation().setZ(0.0);
             wp.setSpeed(speed);
             wp.setSegmentMaxWidth(1.0f);

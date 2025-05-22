@@ -117,7 +117,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         for (NetnEtrTcParam.Point2D wpc : waypoints) {
             WaypointStruct wp = new WaypointStruct();
             double [] wcs = CoordinateConversions.getXYZfromLatLonDegrees(wpc.getX(), wpc.getY(), 0.0);
-            wp.getLocation().setY(wcs[0];
+            wp.getLocation().setY(wcs[0]);
             wp.getLocation().setX(wcs[1]);
             wp.getLocation().setZ(0.0);
             wp.setSpeed(speed);

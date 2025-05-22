@@ -370,8 +370,10 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             // block here
             if (timeout > 0) f1.get(timeout, TimeUnit.SECONDS);
             else f1.get();
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error(e.getMessage());
+        } catch (TimeoutException e) {
+            logger.info("Timeout reached");
         } 
     }
 

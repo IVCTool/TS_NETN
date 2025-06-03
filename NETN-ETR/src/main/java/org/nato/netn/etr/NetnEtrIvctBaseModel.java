@@ -260,7 +260,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         logger.trace("reflectAttributeValues without time");
         
         if (baseEntitiesFromSuT.isEmpty()) return;
-        Optional<BaseEntity> obe = baseEntitiesFromSuT.stream().filter(be -> be.getObjectHandle() == theObject).findAny();
+        Optional<BaseEntity> obe = baseEntitiesFromSuT.stream().filter(be -> be.getObjectHandle().equals(theObject)).findAny();
         if (obe.isEmpty()) return;
 
         BaseEntity baseEntityFromSuT = obe.get();

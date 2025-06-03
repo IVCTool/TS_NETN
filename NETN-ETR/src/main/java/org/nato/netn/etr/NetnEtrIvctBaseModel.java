@@ -511,11 +511,13 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         }
         HLAfixedRecord fr = (HLAfixedRecord)svs.getDataElement().getValue();
         WorldLocationStruct loc = (WorldLocationStruct)fr.get(0);
+        double [] wc = new double [] {loc.getX(), loc.getY(), loc.getZ()};
+        double [] lld = CoordinateConversions.xyzToLatLonDegrees(wc);
         return "Spatial: (" +
             "Position: " + "(" +
-                "X: " + loc.getX() + ", " + 
-                "Y: " + loc.getY() + ", " + 
-                "Z: " + loc.getZ() + ", " +
+                "X: " + lld[0] + ", " + 
+                "Y: " + lld[1] + ", " + 
+                "Z: " + lld[2] + ", " +
             ")" + 
         ")";
     }

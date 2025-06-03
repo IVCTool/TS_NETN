@@ -1,6 +1,5 @@
 package org.nato.netn.etr;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HexFormat;
@@ -19,11 +18,8 @@ import java.util.stream.StreamSupport;
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
-import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskDefinitionsStruct;
-import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ArrayOfTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct;
-import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskProgress;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskProgressVariantRecord;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.WaypointStruct;
@@ -31,7 +27,6 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ObservationReport;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.PositionStatusReport;
-import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_Response;
 import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.EntityIdentifierStruct;
 import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.EntityTypeStruct;
@@ -56,12 +51,10 @@ import hla.rti1516e.ObjectInstanceHandle;
 import hla.rti1516e.OrderType;
 import hla.rti1516e.ParameterHandleValueMap;
 import hla.rti1516e.TransportationTypeHandle;
-import hla.rti1516e.encoding.ByteWrapper;
 import hla.rti1516e.encoding.DataElement;
 import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.encoding.EncoderException;
 import hla.rti1516e.encoding.HLAfixedRecord;
-import hla.rti1516e.encoding.HLAinteger32BE;
 import hla.rti1516e.exceptions.AttributeNotDefined;
 import hla.rti1516e.exceptions.FederateInternalError;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
@@ -486,6 +479,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     public String toString(EntityTypeStruct et) {
+        if (et == null) {
+            return "No EntityType provided.";
+        }
         return ("EntityType: (" + 
             "Kind: " + (int)et.getEntityKind() + ", " + 
             "Domain: " + (int)et.getDomain() + "," + 
@@ -496,6 +492,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     public String toString(EntityIdentifierStruct eis) {
+        if (eis == null) {
+            return "No EintityIdentifier providid.";
+        }
         FederateIdentifierStruct fi = eis.getFederateIdentifier();
         return "EntityIdentifier: (" + 
             "EintityNumber: " + eis.getEntityNumber() + ", " + 
@@ -507,6 +506,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     public String toString(SpatialVariantStruct svs) {
+        if (svs == null) {
+            return "No position provided.";
+        }
         HLAfixedRecord fr = (HLAfixedRecord)svs.getDataElement().getValue();
         WorldLocationStruct loc = (WorldLocationStruct)fr.get(0);
         return "Spatial: (" +

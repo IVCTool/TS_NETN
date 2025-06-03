@@ -174,7 +174,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 // log RPR-BASE attributes
                 logger.info(baseModel.toString(be.getEntityType()));
                 logger.info(baseModel.toString(be.getEntityIdentifier()));
-                // logger.info(baseModel.toString(be.getSpatial()));
+                logger.info(baseModel.toString(be.getSpatial()));
                 // test current tasks and task progress in BaseEntity
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
                 logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca, MoveTaskProgressStruct.class));

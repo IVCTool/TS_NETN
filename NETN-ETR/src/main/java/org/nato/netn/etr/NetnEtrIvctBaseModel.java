@@ -69,6 +69,7 @@ import hla.rti1516e.exceptions.FederateServiceInvocationsAreBeingReportedViaMOM;
 import hla.rti1516e.exceptions.InteractionClassNotDefined;
 import hla.rti1516e.exceptions.InteractionClassNotPublished;
 import hla.rti1516e.exceptions.InteractionParameterNotDefined;
+import hla.rti1516e.exceptions.InvalidAttributeHandle;
 import hla.rti1516e.exceptions.InvalidInteractionClassHandle;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
 import hla.rti1516e.exceptions.NameNotFound;
@@ -272,9 +273,10 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         baseEntityFromSuT.clear();
 
         try {
+            logger.trace("Attribute Name: " + ivct_rti.getAttributeName(baseEntityFromSuT.getClassHandle(), theAttributes.keySet().iterator().next()));
             baseEntityFromSuT.decode(theAttributes);
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected
-                | RTIinternalError | DecoderException e) {
+                | RTIinternalError | DecoderException | AttributeNotDefined | InvalidAttributeHandle e) {
             logger.error("reflectAttributeValues received Exception", e);
         }
     }

@@ -350,7 +350,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             try {
                 while (f.call()) {Thread.sleep(RESCHEDULE);}
             } catch (InterruptedException e) {
-                //
+                logger.error(e.getMessage());
             }
             return rs;
         }, executorService);
@@ -467,6 +467,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     private boolean testETR_TaskStatus(UUIDStruct uid, TaskStatusEnum32 ts) {
         return taskStatusList.stream().filter(r -> {
             try {
+                logger.trace("ETR_TaskStatus: " + r.getTask() + " " + r.getStatus());
                 return r.getTask().equals(uid) && r.getStatus().equals(ts);
             } catch (EncoderException | DecoderException e) {
                 return false;

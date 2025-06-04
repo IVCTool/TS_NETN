@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -80,13 +82,13 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 
     // design issue: logger is private in IVCT_BaseModel
     private Logger logger;
-    private HashMap<ObjectInstanceHandle, BaseEntity> knownBaseEntities = new HashMap<>();
-    private List<BaseEntity> baseEntitiesFromSuT = new ArrayList<>();
+    private ConcurrentHashMap<ObjectInstanceHandle, BaseEntity> knownBaseEntities = new ConcurrentHashMap<>();
+    private List<BaseEntity> baseEntitiesFromSuT = new CopyOnWriteArrayList<>();
     private List<BaseEntity> baseEntitiesFromSuTWithSA;
-    private List<ETR_TaskStatus> taskStatusList = new ArrayList<>();
-    private List<SMC_Response> responses = new ArrayList<>();
-    private List<ObservationReport> reports = new ArrayList<>();
-    private List<PositionStatusReport> positions = new ArrayList<>();
+    private List<ETR_TaskStatus> taskStatusList = new CopyOnWriteArrayList<>();
+    private List<SMC_Response> responses = new CopyOnWriteArrayList<>();
+    private List<ObservationReport> reports = new CopyOnWriteArrayList<>();
+    private List<PositionStatusReport> positions = new CopyOnWriteArrayList<>();
     private static long RESCHEDULE = 500;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private BaseEntity subscribedAttributes;
@@ -132,7 +134,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             UUID u = UUID.randomUUID();
             uniqueId.decode(HexFormat.of().parseHex(u.toString().replace("-", "")));
             mbr.setUniqueId(uniqueId);
-            mbr.setTaskId(uniqueId);
+            mbr.setTaskId(taskId);
             mbr.setTasker(uniqueId);
             mbr.setEntity(be.getUniqueId());
             mbr.send();
@@ -399,7 +401,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     public void waitForETR_TaskStatus(UUIDStruct taskId, TaskStatusEnum32 ts) {
-        waitWhile(executorService, () -> {return testETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus", -1);
+        waitWhile(executorService, () -> {return !testETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus", -1);
     }
 
     public void waitForObservationReportsFromSuT() {
@@ -468,8 +470,10 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         return taskStatusList.stream().filter(r -> {
             try {
                 logger.trace("ETR_TaskStatus: " + r.getTask() + " " + r.getStatus());
+                logger.trace("ETR_TaskStatus uid: " + uid + " ts: " + ts);
                 return r.getTask().equals(uid) && r.getStatus().equals(ts);
             } catch (EncoderException | DecoderException e) {
+                logger.error("Error in testETR_TaskStatus: " + e.getMessage());
                 return false;
             }
         }).findAny().isPresent();

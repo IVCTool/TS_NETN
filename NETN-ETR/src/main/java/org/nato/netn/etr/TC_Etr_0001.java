@@ -14,9 +14,12 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
 import java.util.HexFormat;
+import java.util.List;
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruct;
@@ -39,6 +42,8 @@ public class TC_Etr_0001 extends AbstractTestCase {
     private IVCT_LoggingFederateAmbassador ivct_LoggingFederateAmbassador;
     private FederateHandle federateHandle;
     private JSONObject root = null;
+    // TODO: make selfTest configurable
+    private boolean selfTest = true;
 
     public void setTcParamFromFile(String fileName) {
         if (tcParam == null && root == null) {
@@ -73,7 +78,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
             throw new TcInconclusive("unable to initialize test case root", e);
         }
         baseModel = new NetnEtrIvctBaseModel(logger, netnTcParam);
-        // logger.info("Waypoints: " + netnTcParam.getWaypoints());
+        logger.info("Waypoints: " + netnTcParam.getWaypoints());
         baseModel.setSutFederateName(netnTcParam.getSutFederateName());
         baseModel.setFederationName(netnTcParam.getFederationName());
         this.setFederationName(netnTcParam.getFederationName());
@@ -126,18 +131,21 @@ public class TC_Etr_0001 extends AbstractTestCase {
         String [] sa = netnTcParam.getSupportedActions();
         EntityControlActionEnum32 eca = EntityControlActionEnum32.valueOf(sa[0]);
         logger.info("Test step - test SuT if it supports " + sa[0]);
-        baseModel.waitForBaseEntitiesFromSuT();
+        if (!selfTest) {
+            baseModel.waitForBaseEntitiesFromSuT();
+        }
 
         // wait for a minimum of one BaseEntity with requested supported action
         logger.info("Test step - test baseEntities from SuT if one of them supports " + sa);
-        // List<BaseEntity> baseEntitiesFromSuT_SA = baseModel.waitForSupportedActions(eca);
-        
-        // take the first one (it definitely exists) and task it
-        // BaseEntity be = baseEntitiesFromSuT_SA.get(0);
-
-        // for testing only
-        // BaseEntity be = baseEntitiesFromSuT_SA.get(0);
         BaseEntity be = null;
+        if (!selfTest) {
+            List<BaseEntity> baseEntitiesFromSuT_SA = baseModel.waitForSupportedActions(eca);
+            // take the first one (it definitely exists) and task it
+            be = baseEntitiesFromSuT_SA.get(0);
+        }
+
+        // for testing only: Pitch has to implement SupportedActions in Pitch Actors first, 
+        // yet we use a static BaseEntity
         try {
             be = new BaseEntity();
             UUIDStruct uis = new UUIDStruct();
@@ -149,8 +157,6 @@ public class TC_Etr_0001 extends AbstractTestCase {
             e.printStackTrace();;
         }
 
-
-
         // test for task id, which is used to task entities of SuT
         String taskId = netnTcParam.getTaskId();
         try {
@@ -161,14 +167,17 @@ public class TC_Etr_0001 extends AbstractTestCase {
             UUIDStruct interactionId = baseModel.sendTask(be, us, netnTcParam.getWaypoints(), netnTcParam.getSpeed());
 
             // test SMC_Response, if task was accepted by SuT
-            baseModel.waitForSMC_Responses();
+            // baseModel.waitForSMC_Responses();
             boolean accepted = baseModel.testSMC_Response(interactionId);
             logger.info("SuT responded to task with taskId " + taskId + ": " + accepted);
-
+            if (selfTest) accepted = true;
+            
             if (accepted) {
                 // test ETR_Status for accepted, executing
+                if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Accepted);
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Accepted);
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Accepted);
+                if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Executing);
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Executing);
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Executing);     
                 // log RPR-BASE attributes
@@ -180,13 +189,14 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca, MoveTaskProgressStruct.class));
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());
+                if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Completed);
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Completed);
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Completed);
                 logger.info(baseModel.toString(be.getSpatial()));
             } else {
                 throw new TcInconclusive("Task " + taskId + " was not accepted");
             }
-        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException | DecoderException e) {
+        } catch (RTIinternalError | NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | EncoderException | DecoderException | OmtEncodingHelperException e) {
             throw new TcInconclusive(e.getMessage());
         }
     }

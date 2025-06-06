@@ -23,6 +23,7 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskProgressVariantRecord;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.WaypointStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.CancelTasks;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ObservationReport;
@@ -88,7 +89,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     private List<ObservationReport> reports = new ArrayList<>();
     private List<PositionStatusReport> positions = new ArrayList<>();
     private static long RESCHEDULE = 500;
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private ExecutorService executorService = Executors.newCachedThreadPool();
     private BaseEntity subscribedAttributes;
 
     public NetnEtrIvctBaseModel(Logger logger, IVCT_TcParam ivct_TcParam) throws TcInconclusive {
@@ -104,6 +105,21 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         subscribedAttributes = subscribeAttributes();
         publishInteractions();
         subscribeInteractions();
+    }
+
+    public void addTaskStatus(UUIDStruct us, TaskStatusEnum32 tse) throws NameNotFound, FederateNotExecutionMember, NotConnected, RTIinternalError, OmtEncodingHelperException {
+        ETR_TaskStatus ts = new ETR_TaskStatus();
+        ts.setTask(us);
+        ts.setStatus(tse);
+        taskStatusList.add(ts);
+        logger.info("Task status " + tse + " for " + us + " injected");
+        logger.info("Task status list " + taskStatusList.stream().map(t -> {
+            try {
+                return t.getStatus();
+            } catch (EncoderException | DecoderException e) {
+                return TaskStatusEnum32.Error;
+            }
+        }).collect(Collectors.toList()));
     }
 
     private MoveByRouteTaskStruct createTask(List<NetnEtrTcParam.Point2D> waypoints, float speed) throws RTIinternalError {
@@ -132,7 +148,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             UUID u = UUID.randomUUID();
             uniqueId.decode(HexFormat.of().parseHex(u.toString().replace("-", "")));
             mbr.setUniqueId(uniqueId);
-            mbr.setTaskId(uniqueId);
+            mbr.setTaskId(taskId);
             mbr.setTasker(uniqueId);
             mbr.setEntity(be.getUniqueId());
             mbr.send();
@@ -323,6 +339,8 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         try {
             MoveByRoute mbr = new MoveByRoute();
             mbr.publish();
+            CancelTasks ct = new CancelTasks();
+            ct.publish();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
             throw new TcInconclusive("Could not publish MoveByRoute interaction class.");
@@ -344,17 +362,17 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             throw new TcInconclusive("Could not subscribe to one of {SMC_Response, ETR_TaskStatus, ObservationReort, PositionStatusReport}");
         }
     }
-
+    
     private void waitWhile(ExecutorService executorService, Callback f, String rs, int timeout) {
         CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> {
             try {
+                logger.info("Starting thread waitWhile for " + rs);
                 while (f.call()) {Thread.sleep(RESCHEDULE);}
             } catch (InterruptedException e) {
-                logger.error(e.getMessage());
+                logger.error("waitWhile: "  + e.getMessage());
             }
             return rs;
         }, executorService);
-
         f1.thenAccept(result -> {
             logger.info(result + " from SuT federate " + getSutFederateName() + " received.");
         })
@@ -367,9 +385,10 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             if (timeout > 0) f1.get(timeout, TimeUnit.SECONDS);
             else f1.get();
         } catch (InterruptedException | ExecutionException e) {
-            logger.error(e.getMessage());
+            logger.error("-------> " + e.getMessage());
         } catch (TimeoutException e) {
-            logger.info("Timeout reached");
+            logger.info("Timeout reached for " + rs);
+            f1.complete(rs);
         } 
     }
 
@@ -399,7 +418,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     public void waitForETR_TaskStatus(UUIDStruct taskId, TaskStatusEnum32 ts) {
-        waitWhile(executorService, () -> {return testETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus", -1);
+        waitWhile(executorService, () -> {return !testETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
     }
 
     public void waitForObservationReportsFromSuT() {
@@ -470,6 +489,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                 logger.trace("ETR_TaskStatus: " + r.getTask() + " " + r.getStatus());
                 return r.getTask().equals(uid) && r.getStatus().equals(ts);
             } catch (EncoderException | DecoderException e) {
+                logger.error("testETR_TaskStatus ", e);
                 return false;
             }
         }).findAny().isPresent();
@@ -511,6 +531,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             return "No position provided.";
         }
         HLAfixedRecord fr = (HLAfixedRecord)svs.getDataElement().getValue();
+        if (fr == null) {
+            return "No position provided.";
+        }
         WorldLocationStruct loc = (WorldLocationStruct)fr.get(0);
         double [] wc = new double [] {loc.getX(), loc.getY(), loc.getZ()};
         double [] lld = CoordinateConversions.xyzToLatLonDegrees(wc);

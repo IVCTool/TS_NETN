@@ -167,7 +167,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             ec.send();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError | InvalidObjectClassHandle
                 | EncoderException | DecoderException | InteractionClassNotPublished | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress | OmtEncodingHelperException e) {
-           throw new TcInconclusiveIf("Could not send task " + t.getClass().getSimpleName());
+           throw new TcInconclusiveIf("Could not send task " + ec.getClass().getSimpleName());
         }
         return uniqueId;
     }

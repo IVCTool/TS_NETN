@@ -86,7 +86,8 @@ public class TC_Etr_0001 extends AbstractTestCase {
         baseModel.setSutFederateName(netnTcParam.getSutFederateName());
         baseModel.setFederationName(netnTcParam.getFederationName());
         this.setFederationName(netnTcParam.getFederationName());
-
+        selfTest = netnTcParam.getSelfTest();
+        cancelTask = netnTcParam.getCancelTask();
         ivct_LoggingFederateAmbassador = new IVCT_LoggingFederateAmbassador(baseModel, logger);
 
         return baseModel;

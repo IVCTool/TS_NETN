@@ -25,6 +25,8 @@ public class NetnEtrTcParam implements IVCT_TcParam {
     public static final String SUT_TASK_ID = "taskId";
     public static final String ROUTE = "route";
     public static final String SPEED = "speed";
+    public static final String CANCEL_TASK = "cacnelTask";
+    public static final String SELF_TEST = "selfTest";
     
     private NetnFomFiles fomFiles;
 
@@ -133,4 +135,19 @@ public class NetnEtrTcParam implements IVCT_TcParam {
         }).collect(Collectors.toList());
     }
 
+    public boolean getSelfTest() throws TcInconclusive {
+        Object o = parameter.get(SELF_TEST);
+        if (o == null) {
+            throw new TcInconclusive("Parameter " + SELF_TEST + " not set.");
+        }        
+        return ((Boolean)o).booleanValue();
+    }
+
+    public boolean getCancelTask() throws TcInconclusive {
+        Object o = parameter.get(CANCEL_TASK);
+        if (o == null) {
+            throw new TcInconclusive("Parameter " + CANCEL_TASK + " not set.");
+        }        
+        return ((Boolean)o).booleanValue();
+    }    
 }

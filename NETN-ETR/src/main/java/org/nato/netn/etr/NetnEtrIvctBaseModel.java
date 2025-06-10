@@ -1,7 +1,5 @@
 package org.nato.netn.etr;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +17,7 @@ import java.util.stream.StreamSupport;
 
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.ArrayOfUuidStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct;
@@ -30,6 +29,8 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ObservationReport;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.PositionStatusReport;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.Task;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_EntityControl;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_Response;
 import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.EntityIdentifierStruct;
 import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.EntityTypeStruct;
@@ -124,7 +125,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         }).collect(Collectors.toList()));
     }
 
-    private MoveByRouteTaskStruct createTask(List<NetnEtrTcParam.Point2D> waypoints, float speed) throws RTIinternalError {
+    public MoveByRoute createTask(List<NetnEtrTcParam.Point2D> waypoints, float speed) throws RTIinternalError, NameNotFound, FederateNotExecutionMember, NotConnected, OmtEncodingHelperException {
         MoveByRouteTaskStruct t = new MoveByRouteTaskStruct(); // standard move type is CrossCountry
         for (NetnEtrTcParam.Point2D wpc : waypoints) {
             WaypointStruct wp = new WaypointStruct();
@@ -137,26 +138,53 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             wp.setSegmentMaxWidth(1.0f);
             t.getArrayOfWaypointsStruct().addElement(wp);   
         }
-        return t;
+        MoveByRoute mbr = new MoveByRoute();
+        mbr.setTaskParameters(t);        
+        return mbr;
     }
 
-    // returns UUID from MoveByRoute interaction
-    public UUIDStruct sendTask(BaseEntity be, UUIDStruct taskId, List<NetnEtrTcParam.Point2D> waypoints, float speed) throws TcInconclusiveIf {
+    public CancelTasks createTask(UUIDStruct us) throws NameNotFound, FederateNotExecutionMember, NotConnected, RTIinternalError, OmtEncodingHelperException {
+        CancelTasks ct = new CancelTasks();
+        ArrayOfUuidStruct auid = new ArrayOfUuidStruct();
+        auid.addElement(us);
+        ct.setTasks(auid);
+        return ct;
+    }
+
+    public UUIDStruct createRandomUUID() throws RTIinternalError, DecoderException {
+        UUIDStruct randomUUID = new UUIDStruct();
+        UUID u = UUID.randomUUID();
+        randomUUID.decode(HexFormat.of().parseHex(u.toString().replace("-", "")));
+        return randomUUID;       
+    }
+    
+    public UUIDStruct sendSMCControl(SMC_EntityControl ec, BaseEntity be) throws TcInconclusiveIf {
         UUIDStruct uniqueId = null;
         try {
-            MoveByRoute mbr = new MoveByRoute();
-            mbr.setTaskParameters(createTask(waypoints, speed));
-            uniqueId = new UUIDStruct();
-            UUID u = UUID.randomUUID();
-            uniqueId.decode(HexFormat.of().parseHex(u.toString().replace("-", "")));
-            mbr.setUniqueId(uniqueId);
-            mbr.setTaskId(taskId);
-            mbr.setTasker(uniqueId);
-            mbr.setEntity(be.getUniqueId());
-            mbr.send();
+            uniqueId = createRandomUUID();
+            ec.setEntity(be.getUniqueId());
+            ec.setUniqueId(uniqueId);
+            ec.send();
+        } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError | InvalidObjectClassHandle
+                | EncoderException | DecoderException | InteractionClassNotPublished | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress | OmtEncodingHelperException e) {
+           throw new TcInconclusiveIf("Could not send task " + t.getClass().getSimpleName());
+        }
+        return uniqueId;
+    }
+
+    // returns UUID from Task interaction
+    public UUIDStruct sendTask(Task t, BaseEntity be, UUIDStruct taskId) throws TcInconclusiveIf {
+        UUIDStruct uniqueId = null;
+        try {
+            uniqueId = createRandomUUID();
+            t.setUniqueId(uniqueId);
+            t.setTaskId(taskId);
+            t.setTasker(uniqueId);
+            t.setEntity(be.getUniqueId());
+            t.send();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | InteractionClassNotPublished | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress | InvalidObjectClassHandle | EncoderException | DecoderException e) {
-            throw new TcInconclusiveIf("Could not send task MoveByRoute.");
+            throw new TcInconclusiveIf("Could not send task " + t.getClass().getSimpleName());
         }
         return uniqueId;
     }
@@ -345,7 +373,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             ct.publish();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
-            throw new TcInconclusive("Could not publish MoveByRoute interaction class.");
+            throw new TcInconclusive("Could not publish interaction class " + e.getMessage());
         }
     }
 

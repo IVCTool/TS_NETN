@@ -24,6 +24,8 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.CancelTasks;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 
 import hla.rti1516e.FederateHandle;
@@ -44,6 +46,8 @@ public class TC_Etr_0001 extends AbstractTestCase {
     private JSONObject root = null;
     // TODO: make selfTest configurable
     private boolean selfTest = true;
+    // TODO: make cancelTask configurable
+    private boolean cancelTask = false;
 
     public void setTcParamFromFile(String fileName) {
         if (tcParam == null && root == null) {
@@ -121,7 +125,6 @@ public class TC_Etr_0001 extends AbstractTestCase {
     @Override
     protected void performTest(Logger logger) throws TcInconclusiveIf, TcFailedIf {
         logger.info("TC_Etr_0001 test case started");
-        
         if (baseModel == null) {
             logger.error("test case not initialized");
             return;
@@ -164,8 +167,8 @@ public class TC_Etr_0001 extends AbstractTestCase {
             // us.decode(new ByteWrapper(taskId.getBytes(Charset.forName("UTF-16BE"))));
             us.decode(HexFormat.of().parseHex(taskId.replace("-", "")));
             logger.info("Send MoveByRoute task with id " + taskId + " to " + be.getUniqueId());
-            UUIDStruct interactionId = baseModel.sendTask(be, us, netnTcParam.getWaypoints(), netnTcParam.getSpeed());
-
+            MoveByRoute mbr = baseModel.createTask(netnTcParam.getWaypoints(), netnTcParam.getSpeed());
+            UUIDStruct interactionId = baseModel.sendTask(mbr, be, us);
             // test SMC_Response, if task was accepted by SuT
             // baseModel.waitForSMC_Responses();
             boolean accepted = baseModel.testSMC_Response(interactionId);
@@ -190,9 +193,17 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());
                 if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Completed);
-                baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Completed);
-                logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Completed);
-                logger.info(baseModel.toString(be.getSpatial()));
+                if (cancelTask) {
+                    CancelTasks ct = baseModel.createTask(us);
+                    UUIDStruct uid = baseModel.sendSMCControl(ct, be);
+                    baseModel.waitForETR_TaskStatus(uid, TaskStatusEnum32.Cancelled);
+                    logger.info("Task with id " + us + " cancelled.");
+                } else {
+                    baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Completed);
+                    logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Completed);
+                    logger.info(baseModel.toString(be.getSpatial()));
+                }
+
             } else {
                 throw new TcInconclusive("Task " + taskId + " was not accepted");
             }

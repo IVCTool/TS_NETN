@@ -460,13 +460,13 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         //
         baseEntitiesFromSuTWithSA = baseEntitiesFromSuT.stream().filter(be -> {
             try {
-                return StreamSupport.stream(be.getSupportedActions().spliterator(), false).filter(v -> {
+                return StreamSupport.stream(be.getSupportedActions().spliterator(), false).anyMatch(v -> {
                     try {
                         return EntityControlActionEnum32.get(v.getValue()).equals(sat);
                     } catch (DecoderException e) {
                         return false;
                     }
-                }).findAny().isPresent();
+                });
             } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected
                     | RTIinternalError | EncoderException e) {
                 return false;
@@ -477,9 +477,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     public boolean testCurrentTasks(BaseEntity be, UUIDStruct reqTaskId) {
         //
         try {
-            return StreamSupport.stream(be.getCurrentTasks().spliterator(), false).filter(
+            return StreamSupport.stream(be.getCurrentTasks().spliterator(), false).anyMatch(
                 ct -> ct.getTaskId().equals(reqTaskId)
-                ).findAny().isPresent();
+                );
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | EncoderException e) {
             e.printStackTrace();
@@ -490,7 +490,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     public boolean testTaskProgress(BaseEntity be, UUIDStruct reqTaskId, EntityControlActionEnum32 eca, Class<?> cls) {
         //
         try {
-            return StreamSupport.stream(be.getTaskProgress().spliterator(), false).filter(tp -> tp.getXTaskId().equals(reqTaskId)).filter(tp -> {
+            return StreamSupport.stream(be.getTaskProgress().spliterator(), false).filter(tp -> tp.getXTaskId().equals(reqTaskId)).anyMatch(tp -> {
                 TaskProgressVariantRecord rec = tp.getProgressData();
                 try {
                     EntityControlActionEnum32 disc = EntityControlActionEnum32.get(rec.getDiscriminant().getValue());
@@ -499,7 +499,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                 } catch (DecoderException e) {
                     return false;
                 }
-            }).findAny().isPresent();
+            });
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | EncoderException e) {
             e.printStackTrace();
@@ -514,7 +514,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     private boolean testETR_TaskStatus(UUIDStruct uid, TaskStatusEnum32 ts) {
-        return taskStatusList.stream().filter(r -> {
+        return taskStatusList.stream().anyMatch(r -> {
             try {
                 logger.trace("ETR_TaskStatus: " + r.getTask() + " " + r.getStatus());
                 logger.trace("ETR_TaskStatus uid: " + uid + " ts: " + ts);
@@ -523,7 +523,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                 logger.error("Error in testETR_TaskStatus: " + e.getMessage());
                 return false;
             }
-        }).findAny().isPresent();
+        });
     }
 
     public List<String> getReportIds() {

@@ -8,8 +8,19 @@
     "testcases": [
         {
             "TC": "org.nato.netn.etr.TC_ETR_0001",
-            "IR": ["NETN-ETR-0001"],
-            "description": "Abstract test case description"
+            "IR": [
+                "ETR00002", 
+                "ETR00003", 
+                "ETR00004", 
+                "ETR00005", 
+                "ETR00007", 
+                "ETR00010", 
+                "ETR00015", 
+                "ETR00016", 
+                "ETR00017",
+                "ETR00019"
+            ],
+            "description": "Test Case for the ETR Interoperability Capability Badge"
         }
     ],
 	"parameters":[

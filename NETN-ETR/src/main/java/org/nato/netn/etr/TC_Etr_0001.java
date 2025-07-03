@@ -174,10 +174,10 @@ public class TC_Etr_0001 extends AbstractTestCase {
             // ETR00016: SuT shall respond to NETN-ETR SMC_EntityControl.Task interaction with a 
             // NETN-SMC SMC_Response with a status indicating success (accepting a task request) or 
             // failure (request not accepted).
-            // baseModel.waitForSMC_Responses();
-            boolean accepted = baseModel.testSMC_Response(interactionId);
+
+            if (!selfTest) baseModel.waitForSMC_Responses();
+            boolean accepted = (selfTest) ? true : baseModel.testSMC_Response(interactionId);
             logger.info("SuT responded to task with taskId " + taskId + ": " + accepted);
-            if (selfTest) accepted = true;
             
             if (accepted) {
                 // ETR00004: SuT shall publish the NETN-ETR ETR_TaskStatus interaction class.

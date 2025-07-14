@@ -25,7 +25,7 @@ public class NetnEtrTcParam implements IVCT_TcParam {
     public static final String SUT_TASK_ID = "taskId";
     public static final String ROUTE = "route";
     public static final String SPEED = "speed";
-    public static final String CANCEL_TASK = "cacnelTask";
+    public static final String CANCEL_TASK = "cancelTask";
     public static final String SELF_TEST = "selfTest";
     
     private NetnFomFiles fomFiles;

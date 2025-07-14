@@ -351,6 +351,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             // B. Möller et al., Extended FOM Module Merging Capabilities, 2013
             BaseEntity baseEntity = new BaseEntity();
             baseEntity.subscribeSupportedActions();
+            baseEntity.subscribePlannedTasks();
             baseEntity.subscribeCurrentTasks();
             baseEntity.subscribeTaskProgress();
             baseEntity.subscribeUniqueId();
@@ -389,7 +390,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             psr.subscribe();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | FederateServiceInvocationsAreBeingReportedViaMOM | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
-            throw new TcInconclusive("Could not subscribe to one of {SMC_Response, ETR_TaskStatus, ObservationReort, PositionStatusReport}");
+            throw new TcInconclusive("Could not subscribe to one of {SMC_Response, ETR_TaskStatus, ObservationReport, PositionStatusReport}");
         }
     }
     
@@ -478,6 +479,19 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         //
         try {
             return StreamSupport.stream(be.getCurrentTasks().spliterator(), false).anyMatch(
+                ct -> ct.getTaskId().equals(reqTaskId)
+                );
+        } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | EncoderException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean testPlannedTasks(BaseEntity be, UUIDStruct reqTaskId) {
+        //
+        try {
+            return StreamSupport.stream(be.getPlannedTasks().spliterator(), false).anyMatch(
                 ct -> ct.getTaskId().equals(reqTaskId)
                 );
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError

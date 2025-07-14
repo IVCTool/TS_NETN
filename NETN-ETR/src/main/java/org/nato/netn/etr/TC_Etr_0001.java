@@ -186,6 +186,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Accepted);
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Accepted);
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Accepted);
+                logger.info("Task with id " + taskId + " is in the planned tasks list: " + baseModel.testPlannedTasks(be, us));
                 if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Executing);
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Executing);
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Executing);     

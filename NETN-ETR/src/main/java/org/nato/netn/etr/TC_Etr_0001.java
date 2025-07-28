@@ -26,6 +26,7 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruc
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.CancelTasks;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.RequestTaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 
 import hla.rti1516e.FederateHandle;
@@ -194,6 +195,10 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 logger.info(baseModel.toString(be.getEntityType()));
                 logger.info(baseModel.toString(be.getEntityIdentifier()));
                 logger.info(baseModel.toString(be.getSpatial()));
+                RequestTaskStatus rts = baseModel.createRequestTaskStatus(us, be);
+                UUIDStruct uid = baseModel.sendSMCControl(rts, be);
+                if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Executing);
+                baseModel.waitForETR_TaskStatusWithCount(us, TaskStatusEnum32.Executing, 2);
                 // ETR00005: SuT shall publish NETN-ETR BaseEntity attributes PlannedTasks, CurrentTasks and TaskProgress.
                 // ETR00019: SuT accepting a task request shall update the NETN-ETR BaseEntity attributes PlannedTasks, 
                 // CurrentTasks and TaskProgress to reflect current task status.
@@ -202,14 +207,16 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 // ETR00007: SuT shall publish all NETN-ETR ETR_Report interaction subclasses as declared in CS.
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());
-                if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Completed);
+                
                 if (cancelTask) {
                     // ETR00010: SuT shall subscribe to NETN-ETR SMC_EntityControl.CancelTasks interaction class.
-                    CancelTasks ct = baseModel.createTask(us);
-                    UUIDStruct uid = baseModel.sendSMCControl(ct, be);
+                    CancelTasks ct = baseModel.createCancelTasks(us, be);
+                    uid = baseModel.sendSMCControl(ct, be);
+                    if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Cancelled);
                     baseModel.waitForETR_TaskStatus(uid, TaskStatusEnum32.Cancelled);
                     logger.info("Task with id " + us + " cancelled.");
                 } else {
+                    if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Completed);
                     baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Completed);
                     logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Completed);
                     logger.info(baseModel.toString(be.getSpatial()));

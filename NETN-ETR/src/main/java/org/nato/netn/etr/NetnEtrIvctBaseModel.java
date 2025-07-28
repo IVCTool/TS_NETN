@@ -29,6 +29,7 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ObservationReport;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.PositionStatusReport;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.RequestTaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.Task;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_EntityControl;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_Response;
@@ -143,12 +144,24 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         return mbr;
     }
 
-    public CancelTasks createTask(UUIDStruct us) throws NameNotFound, FederateNotExecutionMember, NotConnected, RTIinternalError, OmtEncodingHelperException {
+    public CancelTasks createCancelTasks(UUIDStruct us, BaseEntity be) throws NameNotFound, FederateNotExecutionMember, NotConnected, RTIinternalError, OmtEncodingHelperException, InvalidObjectClassHandle, EncoderException {
         CancelTasks ct = new CancelTasks();
         ArrayOfUuidStruct auid = new ArrayOfUuidStruct();
         auid.addElement(us);
         ct.setTasks(auid);
+        ct.setEntity(be.getUniqueId());
         return ct;
+    }
+
+    public RequestTaskStatus createRequestTaskStatus(UUIDStruct us, BaseEntity be) throws NameNotFound, FederateNotExecutionMember, NotConnected, RTIinternalError, OmtEncodingHelperException, InvalidObjectClassHandle, EncoderException {
+        RequestTaskStatus rts = new RequestTaskStatus();
+        if (us != null) {
+            ArrayOfUuidStruct auid = new ArrayOfUuidStruct();
+            auid.addElement(us);
+            rts.setTasks(auid);
+        }
+        rts.setEntity(be.getUniqueId());
+        return rts;
     }
 
     public UUIDStruct createRandomUUID() throws RTIinternalError, DecoderException {
@@ -452,6 +465,10 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         waitWhile(executorService, () -> {return !testETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
     }
 
+    public void waitForETR_TaskStatusWithCount(UUIDStruct taskId, TaskStatusEnum32 ts, long cnt) {
+        waitWhile(executorService, () -> {return cnt - 1 < countETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
+    }
+
     public void waitForObservationReportsFromSuT() {
         // set timeout here!
         waitWhile(executorService, () -> {return reports.isEmpty();}, "ObservationReport", 5);
@@ -538,6 +555,19 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                 return false;
             }
         });
+    }
+
+    private long countETR_TaskStatus(UUIDStruct uid, TaskStatusEnum32 ts) {
+        return taskStatusList.stream().filter(r -> {
+            try {
+                logger.trace("ETR_TaskStatus: " + r.getTask() + " " + r.getStatus());
+                logger.trace("ETR_TaskStatus uid: " + uid + " ts: " + ts);
+                return r.getTask().equals(uid) && r.getStatus().equals(ts);
+            } catch (EncoderException | DecoderException e) {
+                logger.error("Error in testETR_TaskStatus: " + e.getMessage());
+                return false;
+            }
+        }).count();
     }
 
     public List<String> getReportIds() {

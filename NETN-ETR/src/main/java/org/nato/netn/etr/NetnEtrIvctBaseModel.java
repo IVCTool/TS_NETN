@@ -385,6 +385,8 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             mbr.publish();
             CancelTasks ct = new CancelTasks();
             ct.publish();
+            RequestTaskStatus rts = new RequestTaskStatus();
+            rts.publish();
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | OmtEncodingHelperException | InteractionClassNotDefined | SaveInProgress | RestoreInProgress e) {
             throw new TcInconclusive("Could not publish interaction class " + e.getMessage());
@@ -466,7 +468,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     public void waitForETR_TaskStatusWithCount(UUIDStruct taskId, TaskStatusEnum32 ts, long cnt) {
-        waitWhile(executorService, () -> {return cnt - 1 < countETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
+        waitWhile(executorService, () -> {return cnt > countETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
     }
 
     public void waitForObservationReportsFromSuT() {
@@ -589,7 +591,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 
     public String toString(EntityIdentifierStruct eis) {
         if (eis == null) {
-            return "No EintityIdentifier providid.";
+            return "No EintityIdentifier provided.";
         }
         FederateIdentifierStruct fi = eis.getFederateIdentifier();
         return "EntityIdentifier: (" + 

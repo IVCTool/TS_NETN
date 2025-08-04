@@ -205,7 +205,6 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     // callback section
     @Override
     public void receiveInteraction(final InteractionClassHandle interactionClass, final ParameterHandleValueMap theParameters, final byte[] userSuppliedTag, final OrderType sentOrdering, final TransportationTypeHandle theTransport, final SupplementalReceiveInfo receiveInfo) throws FederateInternalError {
-        // if (checkSuTHandle(receiveInfo.getProducingFederate())) {
         if (true) {
             try {
                 String receivedClass = ivct_rti.getInteractionClassName(interactionClass);
@@ -607,6 +606,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         if (svs == null) {
             return "No position provided.";
         }
+        if (svs.getDataElement() == null) {
+            return "No position provided.";
+        }        
         HLAfixedRecord fr = (HLAfixedRecord)svs.getDataElement().getValue();
         if (fr == null) {
             return "No position provided.";

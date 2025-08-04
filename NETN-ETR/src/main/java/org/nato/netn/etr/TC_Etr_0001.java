@@ -98,7 +98,8 @@ public class TC_Etr_0001 extends AbstractTestCase {
         stringBuilder.append("\n");
         stringBuilder.append("---------------------------------------------------------------------\n");
         stringBuilder.append("TEST PURPOSE\n");
-        stringBuilder.append("This is a test case example for the NETN ETR test suite.\n");
+        stringBuilder.append("This test case evaluates the IRs for NETN ETR:\n");
+        stringBuilder.append("SuT will be tested in the role of a task receiver.\n");
         stringBuilder.append("---------------------------------------------------------------------\n");
         final String testPurpose = stringBuilder.toString();
 

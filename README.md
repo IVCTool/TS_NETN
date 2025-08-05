@@ -1,6 +1,6 @@
 # Experimental NETN Test Suite
 
-This repository will be used for the development of the NETN Test Suite. Currently it is only a draft and contains only initial design artefact.
+This repository will be used for the development of the NETN Test Suite. Currently it contains ETR test cases for SuT in tasker and task receiver roles.
 
 ![NETN Badge](docs/src/NETN-4.0.png)
 

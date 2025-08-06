@@ -5,6 +5,6 @@
     "taskId" : "77e004e5-a3b3-43be-b655-0f9167ec051b",
     "speed" : 22,
     "route" : [{"x": 58.38580, "y" : 15.55502}, {"x" : 58.37753, "y" : 15.56698}],
-    "selfTest" : true,
+    "selfTest" : false,
     "cancelTask" : false
 }

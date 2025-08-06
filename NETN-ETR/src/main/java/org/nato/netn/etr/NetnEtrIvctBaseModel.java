@@ -164,7 +164,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         return rts;
     }
 
-    public UUIDStruct createRandomUUID() throws RTIinternalError, DecoderException {
+    public static UUIDStruct createRandomUUID() throws RTIinternalError, DecoderException {
         UUIDStruct randomUUID = new UUIDStruct();
         UUID u = UUID.randomUUID();
         randomUUID.decode(HexFormat.of().parseHex(u.toString().replace("-", "")));
@@ -263,6 +263,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                     BaseEntity obj = new BaseEntity();
                     obj.setObjectHandle(theObject);
                     knownBaseEntities.put(theObject, obj);
+                    requestAttributeValueUpdate(theObject);
                     baseEntitiesFromSuT.add(obj);
                 }
             }             
@@ -272,13 +273,15 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     }
 
     // Only active, if switch 'conveyProducingFederate' is enabled
+    // this callback delivers only base entities from SuT federate
     @Override
     public void discoverObjectInstance(final ObjectInstanceHandle theObject, final ObjectClassHandle theObjectClass, final String objectName, final FederateHandle producingFederate) throws FederateInternalError {
-        discoverObjectInstance(theObject, theObjectClass, objectName);
         BaseEntity be = checkSutHandle(producingFederate, theObject);
         if (be != null && !baseEntitiesFromSuT.contains(be)) {
             requestAttributeValueUpdate(theObject);
             baseEntitiesFromSuT.add(be);
+        } else {
+            discoverObjectInstance(theObject, theObjectClass, objectName);            
         }
     }    
 

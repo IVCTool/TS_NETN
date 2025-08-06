@@ -1,7 +1,12 @@
 package org.nato.netn.etr;
 
+import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.StreamSupport;
 
 import org.nato.ivct.OmtEncodingHelpers.Core.HLAroot;
@@ -10,6 +15,7 @@ import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAhandle;
 import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAhandleList;
 import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAinteractionSubList;
 import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAinteractionSubscription;
+import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAinteractionRoot;
 import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAreportInteractionPublication;
 import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAreportInteractionSubscription;
 import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAreportObjectClassPublication;
@@ -19,6 +25,7 @@ import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLArequestSubscription
 import org.nato.ivct.OmtEncodingHelpers.Core.objects.HLAfederate;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.Task;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
 import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.EntityIdentifierStruct;
@@ -30,7 +37,6 @@ import org.nato.ivct.OmtEncodingHelpers.RPR.Base.datatypes.WorldLocationStruct;
 import org.slf4j.Logger;
 
 import de.fraunhofer.iosb.tc_lib.IVCT_BaseModel;
-import de.fraunhofer.iosb.tc_lib.IVCT_TcParam;
 import de.fraunhofer.iosb.tc_lib.TcInconclusive;
 import edu.nps.moves.disutil.CoordinateConversions;
 import hla.rti1516e.AttributeHandle;
@@ -68,19 +74,17 @@ import hla.rti1516e.exceptions.SaveInProgress;
 public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
     private Logger logger;
     private NetnEtrTcParam netParam;
-    private UUIDStruct entityId = null;
     private BaseEntity be = null;
+    private List<String> subscribedInteractions = new CopyOnWriteArrayList<>();
+    private List<String> publishedInteractions = new CopyOnWriteArrayList<>();
+    private Map<String, Boolean> hasFederateSubscribedToAttribute = new ConcurrentHashMap<>();
+    private boolean taskSupported = true;
 
     public NetnEtrIvctBaseModel2(Logger logger, NetnEtrTcParam ivct_TcParam) throws TcInconclusive {
         super(logger, ivct_TcParam);
         netParam = ivct_TcParam;
         this.logger = logger;
         BaseEntity.initialize(ivct_rti);
-        try {
-            entityId = createRandomUUID();
-        } catch (RTIinternalError | DecoderException e) {
-            e.printStackTrace();
-        }
         try {
             be = createBaseEntity(15.55502, 58.38580);
         } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
@@ -110,7 +114,6 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
                 | OmtEncodingHelperException | AttributeNotDefined | ObjectClassNotDefined | SaveInProgress | RestoreInProgress | FederateServiceInvocationsAreBeingReportedViaMOM | InteractionClassNotDefined e) {
             throw new TcInconclusive("Could not pub/sub for HLAreports" + e.getMessage());
         }
-
     }
 
     public void registerPubSub(FederateHandle fh) throws TcInconclusive {
@@ -118,6 +121,7 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
             throw new TcInconclusive("Call initializeRTI first.");
         }
         subscribeHLAreports();
+        hasFederateSubscribedToAttribute.put("SupportedActions", false);
     } 
 
     private String getHLAinteractionClassName(HLAhandle h) {
@@ -141,8 +145,16 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
         return randomUUID;       
     }
 
+    private void process(HLAhandle h) {
+        String si = getHLAinteractionClassName(h);
+        logger.info("Federate published interaction " + si);
+        publishedInteractions.add(si);
+    }
+
     private void process(HLAinteractionSubscription sub) {
-        System.out.println("<<<<<<<<<<<<<<<< " + getHLAinteractionClassName(sub.getHLAinteractionClass()));
+        String si = getHLAinteractionClassName(sub.getHLAinteractionClass());
+        logger.info("Federate subscribed to interaction " + si);
+        subscribedInteractions.add(si);
     }
 
     public void updateBaseEntity() throws AttributeNotOwned, AttributeNotDefined, ObjectInstanceNotKnown, SaveInProgress, RestoreInProgress, FederateNotExecutionMember, NotConnected, RTIinternalError, NameNotFound, InvalidObjectClassHandle, EncoderException {
@@ -158,6 +170,7 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
             eac.addElement(eca.getDataElement());
         }
         be.setSupportedActions(eac);
+        UUIDStruct entityId = createRandomUUID();
         be.setUniqueId(entityId);
         //
         EntityIdentifierStruct eis = new EntityIdentifierStruct();
@@ -191,50 +204,58 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
         try {
             AttributeHandleFactory ahf = HLAroot.getRtiAmbassador().getAttributeHandleFactory();
             ObjectClassHandleFactory ochf = HLAroot.getRtiAmbassador().getObjectClassHandleFactory();
-
+            String becn = new BaseEntity().getHlaClassName();
             String receivedClass = ivct_rti.getInteractionClassName(interactionClass);
-            System.out.println("++++++ " + receivedClass);                
+            logger.trace("Recieved interaction class " + receivedClass);                
             //
             HLAreportInteractionSubscription ris = HLAreportInteractionSubscription.discover(interactionClass);
             if (ris != null) {
-                logger.info("--------------> HLAreportInteractionSubscription received");
                 ris.clear();
                 ris.decode(theParameters);
                 HLAinteractionSubList hhl = ris.getHLAinteractionClassList();
                 StreamSupport.stream(hhl.spliterator(), false).forEach(h -> process(h));
             }
             //
+            HLAreportInteractionPublication rip = HLAreportInteractionPublication.discover(interactionClass);
+            if (rip != null) {
+                rip.clear();
+                rip.decode(theParameters);
+                HLAhandleList hl = rip.getHLAinteractionClassList();
+                StreamSupport.stream(hl.spliterator(), false).forEach(h -> process(h));
+            }
+            //
             HLAreportObjectClassSubscription rocs = HLAreportObjectClassSubscription.discover(interactionClass);
             if (rocs != null) {
-                logger.info("--------------> HLAreportObjectClassSubscription received");
                 rocs.clear();
                 rocs.decode(theParameters);
                 HLAhandle och = rocs.getHLAObjectClass();
                 byte [] obj = och.toByteArray();
                 ObjectClassHandle ocha = ochf.decode(obj, 4);
                 String cn = HLAroot.getRtiAmbassador().getObjectClassName(ocha);
-                //System.out.println("~~~~~~~~~~ class name " + cn);
-                if (cn.equals("HLAobjectRoot.BaseEntity")) {
+                if (cn.equals(becn)) {
                     HLAhandleList hl = rocs.getHlAattributeList();
-                    boolean found = StreamSupport.stream(hl.spliterator(), false).anyMatch(ha -> {
+                    StreamSupport.stream(hl.spliterator(), false).forEach(ha -> {
                         byte [] ba = ha.toByteArray();
                         try {
                             AttributeHandle ah = ahf.decode(ba, 4);
                             String ocn = HLAroot.getRtiAmbassador().getAttributeName(ocha, ah);
-                            //System.out.println("############# attribute "+ ocn + " found.");
-                            return ocn.equals("SupportedActions");
+                            if (hasFederateSubscribedToAttribute.keySet().contains(ocn)) {
+                                if (hasFederateSubscribedToAttribute.replace(ocn, false, true))
+                                    logger.info("Federate subscribed to attribute " + ocn + " in BaseEntity.");
+                            }
                         } catch (CouldNotDecode | FederateNotExecutionMember | NotConnected | RTIinternalError | AttributeNotDefined | InvalidAttributeHandle | InvalidObjectClassHandle | OmtEncodingHelperException e) {
                             e.printStackTrace();
-                            return false;
                         }
                     });
-                    if (found) {
-                        logger.info("Found supportedActions attribute in BaseEntity.");
-                    }
                 }
             }
-        } catch (InvalidInteractionClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError | OmtEncodingHelperException | DecoderException | CouldNotDecode | InvalidObjectClassHandle e) {
-            e.printStackTrace();
+            if (receivedClass.startsWith(new Task().getHlaClassName())) { // must be a subsclass of Task interaction
+                String taskName = receivedClass.substring(receivedClass.lastIndexOf("."));
+                String [] sa = netParam.getSupportedActions();
+                if (taskSupported) taskSupported = Arrays.asList(sa).stream().anyMatch(s -> s.equals(taskName));
+            }
+        } catch (InvalidInteractionClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError | OmtEncodingHelperException | DecoderException | CouldNotDecode | InvalidObjectClassHandle | NameNotFound | EncoderException | TcInconclusive e) {
+            new FederateInternalError(e.getMessage());
         }
     }   
 
@@ -251,7 +272,34 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
         }
     }
 
+    public boolean testInteractionPublication(HLAinteractionRoot ia) {
+        return publishedInteractions.stream().anyMatch(s -> s.equals(ia.getHlaClassName()));
+    }
+
+    public boolean testInteractionSubscription(HLAinteractionRoot ia) {
+        return subscribedInteractions.stream().anyMatch(s -> s.equals(ia.getHlaClassName()));
+    }
+
     public void terminate() {
         terminateRti();
-    }    
+    }
+
+    public boolean testInteractionPublication(HLAinteractionRoot ia, List<String> subInteractions) {
+        String base = ia.getHlaClassName();
+        return subInteractions.stream().allMatch(si -> publishedInteractions.stream().anyMatch(s -> s.equals(base + "." + si)));
+    }
+
+    public boolean testInteractionSubscription(HLAinteractionRoot ia, List<String> subInteractions) {
+        String base = ia.getHlaClassName();
+        return subInteractions.stream().allMatch(si -> subscribedInteractions.stream().anyMatch(s -> s.equals(base + "." + si)));
+    }
+    
+    public boolean testSubscribedAttribute(String name) {
+         Boolean b = hasFederateSubscribedToAttribute.get(name);
+         return b == null ? false : b;
+    }
+    
+    public boolean testTaskSupported() {
+        return taskSupported;
+    }
 }

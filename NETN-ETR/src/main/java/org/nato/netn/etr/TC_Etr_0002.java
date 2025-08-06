@@ -4,6 +4,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -14,13 +16,21 @@ import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAhandle;
 import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLArequestPublications;
 import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLArequestSubscriptions;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_Report;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.PositionStatusReport;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.Task;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.interactions.SMC_Response;
 import org.slf4j.Logger;
 
 import de.fraunhofer.iosb.tc_lib.AbstractTestCase;
 import de.fraunhofer.iosb.tc_lib.IVCT_BaseModel;
 import de.fraunhofer.iosb.tc_lib.IVCT_LoggingFederateAmbassador;
+import de.fraunhofer.iosb.tc_lib.TcFailed;
 import de.fraunhofer.iosb.tc_lib.TcInconclusive;
 import de.fraunhofer.iosb.tc_lib_if.TcFailedIf;
 import de.fraunhofer.iosb.tc_lib_if.TcInconclusiveIf;
@@ -163,6 +173,24 @@ public class TC_Etr_0002 extends AbstractTestCase {
                 | InteractionClassNotPublished | InteractionParameterNotDefined | InteractionClassNotDefined 
                 | SaveInProgress | RestoreInProgress | InvalidObjectClassHandle | AttributeNotDefined | ObjectClassNotDefined 
                 | AttributeNotOwned | ObjectInstanceNotKnown e) {
+            throw new TcInconclusiveIf(e.getMessage());
+        }
+        // TODO: we have to wait here for some synchronization of the SuT to perform all its pubs/subs, then test:
+        try {
+            // ETR00006: SuT shall publish all NETN-ETR SMC_EntityControl.Task interaction subclasses corresponding to the supported NETN-SMC EntityControlActions as declared in CS.
+            if (!baseModel.testInteractionPublication(new Task(), Arrays.asList("MoveByRoute", "MoveToLocation")))throw new TcFailed("ETR00006");
+            // ETR00012: SuT shall subscribe to the NETN-SMC SMC_Response interaction class.
+            if (!baseModel.testInteractionSubscription(new SMC_Response())) throw new TcFailed("ETR00012");
+            // ETR00013: SuT shall subscribe to the NETN-ETR ETR_TaskStatus interaction class.
+            if (!baseModel.testInteractionSubscription(new ETR_TaskStatus())) throw new TcFailed("ETR00013");
+            // ETR00014: SuT shall subscribe to all NETN-ETR ETR_Report interaction subclasses as declared in CS.
+            if (!baseModel.testInteractionSubscription(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00014");
+            // ETR00011: SuT shall subscribe to the NETN-SMC BaseEntity.SupportedActions attribute.
+            if (!baseModel.testSubscribedAttribute("SupportedActions")) throw new TcFailed("ETR00011");
+            // ETR00020: SuT shall only send NETN-ETR SMC_EntityControl.Task to an entity with a NETN-SMC BaseEntity.SupportedActions attribtue value that includes the corresponding task entity control action.
+            if (!baseModel.testTaskSupported()) throw new TcFailed("ETR00020");
+        } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | OmtEncodingHelperException e) {
             throw new TcInconclusiveIf(e.getMessage());
         }
     }

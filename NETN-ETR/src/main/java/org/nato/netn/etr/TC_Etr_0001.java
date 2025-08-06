@@ -152,16 +152,16 @@ public class TC_Etr_0001 extends AbstractTestCase {
 
         // for testing only: Pitch has to implement SupportedActions in Pitch Actors first, 
         // yet we use a static BaseEntity
-        try {
-            be = new BaseEntity();
-            UUIDStruct uis = new UUIDStruct();
-            // uis.decode(new ByteWrapper("10390074-76f2-4533-80b3-c5ae2fc11373".getBytes(Charset.forName("UTF-16BE"))));
-            byte [] bytes = HexFormat.of().parseHex("1039007476f2453380b3c5ae2fc11373");
-            uis.decode(bytes);
-            be.setUniqueId(uis);
-        } catch (Exception e) {
-            e.printStackTrace();;
-        }
+        // try {
+        //     be = new BaseEntity();
+        //     UUIDStruct uis = new UUIDStruct();
+        //     // uis.decode(new ByteWrapper("10390074-76f2-4533-80b3-c5ae2fc11373".getBytes(Charset.forName("UTF-16BE"))));
+        //     byte [] bytes = HexFormat.of().parseHex("1039007476f2453380b3c5ae2fc11373");
+        //     uis.decode(bytes);
+        //     be.setUniqueId(uis);
+        // } catch (Exception e) {
+        //     e.printStackTrace();;
+        // }
 
         // test for task id, which is used to task entities of SuT
         String taskId = netnTcParam.getTaskId();

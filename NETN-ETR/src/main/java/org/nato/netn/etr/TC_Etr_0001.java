@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import de.fraunhofer.iosb.tc_lib.AbstractTestCase;
 import de.fraunhofer.iosb.tc_lib.IVCT_BaseModel;
 import de.fraunhofer.iosb.tc_lib.IVCT_LoggingFederateAmbassador;
+import de.fraunhofer.iosb.tc_lib.TcFailed;
 import de.fraunhofer.iosb.tc_lib.TcInconclusive;
 import de.fraunhofer.iosb.tc_lib_if.TcFailedIf;
 import de.fraunhofer.iosb.tc_lib_if.TcInconclusiveIf;
@@ -13,6 +14,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 
@@ -25,6 +27,7 @@ import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEn
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.CancelTasks;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_Report;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.MoveByRoute;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.RequestTaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
@@ -150,19 +153,6 @@ public class TC_Etr_0001 extends AbstractTestCase {
             be = baseEntitiesFromSuT_SA.get(0);
         }
 
-        // for testing only: Pitch has to implement SupportedActions in Pitch Actors first, 
-        // yet we use a static BaseEntity
-        // try {
-        //     be = new BaseEntity();
-        //     UUIDStruct uis = new UUIDStruct();
-        //     // uis.decode(new ByteWrapper("10390074-76f2-4533-80b3-c5ae2fc11373".getBytes(Charset.forName("UTF-16BE"))));
-        //     byte [] bytes = HexFormat.of().parseHex("1039007476f2453380b3c5ae2fc11373");
-        //     uis.decode(bytes);
-        //     be.setUniqueId(uis);
-        // } catch (Exception e) {
-        //     e.printStackTrace();;
-        // }
-
         // test for task id, which is used to task entities of SuT
         String taskId = netnTcParam.getTaskId();
         try {
@@ -212,6 +202,8 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
                 logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca, MoveTaskProgressStruct.class));
                 // ETR00007: SuT shall publish all NETN-ETR ETR_Report interaction subclasses as declared in CS.
+                if (!baseModel.testInteractionPublication(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00007");
+                // only as a sematic test if SuT sends any reports
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());
                 
@@ -226,7 +218,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
                     if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Completed);
                     baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Completed);
                     logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Completed);
-                    logger.info(baseModel.toString(be.getSpatial()));
+                    logger.info(baseModel.toString(be.getSpatial())); // one could test here for be.getSpatial() == netnTcParam.getWaypoints().getLast(), but that would be a semantic test
                 }
 
             } else {

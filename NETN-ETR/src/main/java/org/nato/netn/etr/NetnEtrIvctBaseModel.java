@@ -4,18 +4,21 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.nato.ivct.OmtEncodingHelpers.Core.HLAroot;
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
+import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAhandle;
+import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAhandleList;
+import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAinteractionRoot;
+import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAreportInteractionPublication;
+import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLArequestPublications;
+import org.nato.ivct.OmtEncodingHelpers.Core.objects.HLAfederate;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.ArrayOfUuidStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
@@ -49,6 +52,7 @@ import hla.rti1516e.AttributeHandle;
 import hla.rti1516e.AttributeHandleValueMap;
 import hla.rti1516e.FederateHandle;
 import hla.rti1516e.InteractionClassHandle;
+import hla.rti1516e.InteractionClassHandleFactory;
 import hla.rti1516e.LogicalTime;
 import hla.rti1516e.MessageRetractionHandle;
 import hla.rti1516e.ObjectClassHandle;
@@ -61,6 +65,7 @@ import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.encoding.EncoderException;
 import hla.rti1516e.encoding.HLAfixedRecord;
 import hla.rti1516e.exceptions.AttributeNotDefined;
+import hla.rti1516e.exceptions.CouldNotDecode;
 import hla.rti1516e.exceptions.FederateInternalError;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
 import hla.rti1516e.exceptions.FederateServiceInvocationsAreBeingReportedViaMOM;
@@ -72,16 +77,13 @@ import hla.rti1516e.exceptions.InvalidInteractionClassHandle;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
 import hla.rti1516e.exceptions.NameNotFound;
 import hla.rti1516e.exceptions.NotConnected;
+import hla.rti1516e.exceptions.ObjectClassNotDefined;
 import hla.rti1516e.exceptions.ObjectInstanceNotKnown;
 import hla.rti1516e.exceptions.RTIinternalError;
 import hla.rti1516e.exceptions.RestoreInProgress;
 import hla.rti1516e.exceptions.SaveInProgress;
 
 public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
-
-    interface Callback {
-        boolean call();
-    }
 
     // design issue: logger is private in IVCT_BaseModel
     private Logger logger;
@@ -92,14 +94,34 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     private List<SMC_Response> responses = new CopyOnWriteArrayList<>();
     private List<ObservationReport> reports = new CopyOnWriteArrayList<>();
     private List<PositionStatusReport> positions = new CopyOnWriteArrayList<>();
-    private static long RESCHEDULE = 500;
+    private List<String> publishedInteractions = new CopyOnWriteArrayList<>();
     private ExecutorService executorService = Executors.newCachedThreadPool();
     private BaseEntity subscribedAttributes;
+    private BlockingSupport bs = null;
 
     public NetnEtrIvctBaseModel(Logger logger, IVCT_TcParam ivct_TcParam) throws TcInconclusive {
         super(logger, ivct_TcParam);
         this.logger = logger;
+        bs = new BlockingSupport(executorService, 100, logger);
         BaseEntity.initialize(ivct_rti);
+    }
+
+    private void subscribeHLAreports() throws TcInconclusive {
+        try {
+            HLAfederate.addSub(HLAfederate.Attributes.HLAfederateHandle);
+            HLAfederate.addSub(HLAfederate.Attributes.HLAfederateName);
+            HLAfederate.addSub(HLAfederate.Attributes.HLAfederateType);
+            HLAfederate.addSub(HLAfederate.Attributes.HLAfederateHost);
+            HLAfederate.addSub(HLAfederate.Attributes.HLARTIversion);
+            HLAfederate.sub();
+            (new HLAreportInteractionPublication()).subscribe();
+
+            HLArequestPublications reqPublications = new HLArequestPublications();
+            reqPublications.publish();                 
+        } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | OmtEncodingHelperException | AttributeNotDefined | ObjectClassNotDefined | SaveInProgress | RestoreInProgress | FederateServiceInvocationsAreBeingReportedViaMOM | InteractionClassNotDefined e) {
+            throw new TcInconclusive("Could not pub/sub for HLAreports" + e.getMessage());
+        }
     }
 
     public void registerPubSub(FederateHandle fh) throws TcInconclusive {
@@ -109,6 +131,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         subscribedAttributes = subscribeAttributes();
         publishInteractions();
         subscribeInteractions();
+        subscribeHLAreports();
     }
 
     public void addTaskStatus(UUIDStruct us, TaskStatusEnum32 tse) throws NameNotFound, FederateNotExecutionMember, NotConnected, RTIinternalError, OmtEncodingHelperException {
@@ -201,6 +224,26 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         }
         return uniqueId;
     }
+    
+    private String getHLAinteractionClassName(HLAhandle h) {
+        InteractionClassHandleFactory x;
+        try {
+            x = HLAroot.getRtiAmbassador().getInteractionClassHandleFactory();
+            byte [] ba = h.toByteArray();
+            // skip the length field: offset 4
+            InteractionClassHandle ich = x.decode(ba, 4);
+            return HLAroot.getRtiAmbassador().getInteractionClassName(ich);            
+        } catch (FederateNotExecutionMember | NotConnected | OmtEncodingHelperException | CouldNotDecode | RTIinternalError | EncoderException | InvalidInteractionClassHandle e) {
+            e.printStackTrace();
+            return null;
+        }         
+    }
+        
+    private void process(HLAhandle h) {
+        String si = getHLAinteractionClassName(h);
+        logger.info("Federate published interaction " + si);
+        publishedInteractions.add(si);
+    }
 
     // callback section
     @Override
@@ -236,6 +279,14 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
                     positions.add(psr);
                     logger.trace("PositionStatusReport received: " + psr.getHeading() + " " + psr.getPosition() + " " + psr.getSpeed());
                 }
+                //
+                HLAreportInteractionPublication rip = HLAreportInteractionPublication.discover(interactionClass);
+                if (rip != null) {
+                    rip.clear();
+                    rip.decode(theParameters);
+                    HLAhandleList hl = rip.getHLAinteractionClassList();
+                    StreamSupport.stream(hl.spliterator(), false).forEach(h -> process(h));
+                }                
             } catch (InvalidInteractionClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError | NameNotFound | OmtEncodingHelperException | DecoderException e) {
                 e.printStackTrace();
             }
@@ -410,35 +461,6 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
             throw new TcInconclusive("Could not subscribe to one of {SMC_Response, ETR_TaskStatus, ObservationReport, PositionStatusReport}");
         }
     }
-    
-    private void waitWhile(ExecutorService executorService, Callback f, String rs, int timeout) {
-        CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> {
-            try {
-                logger.info("Starting thread waitWhile for " + rs);
-                while (f.call()) {Thread.sleep(RESCHEDULE);}
-            } catch (InterruptedException e) {
-                logger.error("waitWhile: "  + e.getMessage());
-            }
-            return rs;
-        }, executorService);
-        f1.thenAccept(result -> {
-            logger.info(result + " from SuT federate " + getSutFederateName() + " received.");
-        })
-        .exceptionally(throwable -> {
-            logger.error("Error occurred in : waitForSupportedActions.f1 " + throwable.getMessage());
-            return null;
-        });
-        try {
-            // block here
-            if (timeout > 0) f1.get(timeout, TimeUnit.SECONDS);
-            else f1.get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("-------> " + e.getMessage());
-        } catch (TimeoutException e) {
-            logger.info("Timeout reached for " + rs);
-            f1.complete(rs);
-        } 
-    }
 
     public void requestAttributeValueUpdate(ObjectInstanceHandle baseEntityFromSuT) {
         // trigger reflection of attributes for objectHandle of baseEntityFromSuT
@@ -452,30 +474,30 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
 
     public void waitForBaseEntitiesFromSuT() {
         //
-        waitWhile(executorService, () -> {return baseEntitiesFromSuT.isEmpty();}, "BaseEntity", -1);
+        bs.waitWhile(() -> {return baseEntitiesFromSuT.isEmpty();}, "BaseEntity", -1);
     }
 
     // testing
     public List<BaseEntity> waitForSupportedActions(EntityControlActionEnum32 sat) {
-        waitWhile(executorService, () -> {filterSupportedActions(sat);return baseEntitiesFromSuTWithSA.isEmpty();}, "Supported actions", -1);
+        bs.waitWhile(() -> {filterSupportedActions(sat);return baseEntitiesFromSuTWithSA.isEmpty();}, "Supported actions", -1);
         return baseEntitiesFromSuTWithSA;
     }
 
     public void waitForSMC_Responses() {
-        waitWhile(executorService, () -> {return responses.isEmpty();}, "SMC_Reponses", -1);
+        bs.waitWhile(() -> {return responses.isEmpty();}, "SMC_Reponses", -1);
     }
 
     public void waitForETR_TaskStatus(UUIDStruct taskId, TaskStatusEnum32 ts) {
-        waitWhile(executorService, () -> {return !testETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
+        bs.waitWhile(() -> {return !testETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
     }
 
     public void waitForETR_TaskStatusWithCount(UUIDStruct taskId, TaskStatusEnum32 ts, long cnt) {
-        waitWhile(executorService, () -> {return cnt > countETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
+        bs.waitWhile(() -> {return cnt > countETR_TaskStatus(taskId, ts);}, "ETR_TaskStatus " + ts, -1);
     }
 
     public void waitForObservationReportsFromSuT() {
         // set timeout here!
-        waitWhile(executorService, () -> {return reports.isEmpty();}, "ObservationReport", 5);
+        bs.waitWhile(() -> {return reports.isEmpty();}, "ObservationReport", 5);
     }
 
     private void filterSupportedActions(EntityControlActionEnum32 sat) {
@@ -632,4 +654,9 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         terminateRti();
         executorService.shutdown();
     }
+
+    public boolean testInteractionPublication(HLAinteractionRoot ia, List<String> subInteractions) {
+        String base = ia.getHlaClassName();
+        return subInteractions.stream().allMatch(si -> publishedInteractions.stream().anyMatch(s -> s.equals(base + "." + si)));
+    }    
 }

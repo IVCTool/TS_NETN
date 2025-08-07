@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.StreamSupport;
 
 import org.nato.ivct.OmtEncodingHelpers.Core.HLAroot;
@@ -25,6 +27,7 @@ import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLArequestSubscription
 import org.nato.ivct.OmtEncodingHelpers.Core.objects.HLAfederate;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.Task;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Smc.datatypes.EntityControlActionsStruct;
@@ -78,12 +81,16 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
     private List<String> subscribedInteractions = new CopyOnWriteArrayList<>();
     private List<String> publishedInteractions = new CopyOnWriteArrayList<>();
     private Map<String, Boolean> hasFederateSubscribedToAttribute = new ConcurrentHashMap<>();
+    private List<String> tasksReceived = new CopyOnWriteArrayList<>();
     private boolean taskSupported = true;
+    private ExecutorService executorService = Executors.newCachedThreadPool();
+    private BlockingSupport bs = null;
 
     public NetnEtrIvctBaseModel2(Logger logger, NetnEtrTcParam ivct_TcParam) throws TcInconclusive {
         super(logger, ivct_TcParam);
         netParam = ivct_TcParam;
         this.logger = logger;
+        bs = new BlockingSupport(executorService, 100, logger);
         BaseEntity.initialize(ivct_rti);
         try {
             be = createBaseEntity(15.55502, 58.38580);
@@ -251,6 +258,7 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
             }
             if (receivedClass.startsWith(new Task().getHlaClassName())) { // must be a subsclass of Task interaction
                 String taskName = receivedClass.substring(receivedClass.lastIndexOf("."));
+                if (!tasksReceived.contains(taskName)) tasksReceived.add(taskName);
                 String [] sa = netParam.getSupportedActions();
                 if (taskSupported) taskSupported = Arrays.asList(sa).stream().anyMatch(s -> s.equals(taskName));
             }
@@ -282,6 +290,7 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
 
     public void terminate() {
         terminateRti();
+        executorService.shutdown();
     }
 
     public boolean testInteractionPublication(HLAinteractionRoot ia, List<String> subInteractions) {
@@ -302,4 +311,8 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
     public boolean testTaskSupported() {
         return taskSupported;
     }
+
+    public void waitForTasksWithCount(long cnt) {
+        bs.waitWhile(() -> {return cnt > tasksReceived.size();}, cnt + "received tasks ", -1);
+    }    
 }

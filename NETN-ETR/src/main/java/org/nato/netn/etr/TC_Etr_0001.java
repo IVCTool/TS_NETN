@@ -36,10 +36,16 @@ import hla.rti1516e.FederateHandle;
 import hla.rti1516e.encoding.DecoderException;
 import hla.rti1516e.encoding.EncoderException;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
+import hla.rti1516e.exceptions.InteractionClassNotDefined;
+import hla.rti1516e.exceptions.InteractionClassNotPublished;
+import hla.rti1516e.exceptions.InteractionParameterNotDefined;
+import hla.rti1516e.exceptions.InvalidInteractionClassHandle;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
 import hla.rti1516e.exceptions.NameNotFound;
 import hla.rti1516e.exceptions.NotConnected;
 import hla.rti1516e.exceptions.RTIinternalError;
+import hla.rti1516e.exceptions.RestoreInProgress;
+import hla.rti1516e.exceptions.SaveInProgress;
 
 public class TC_Etr_0001 extends AbstractTestCase {
 
@@ -134,6 +140,15 @@ public class TC_Etr_0001 extends AbstractTestCase {
             return;
         }
         
+        try {
+            MOMsupport.requestPublicationReportsFromFederate(getSutFederateName());
+        } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | InvalidInteractionClassHandle | EncoderException | InteractionClassNotPublished
+                | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress
+                | OmtEncodingHelperException e) {
+            throw new TcInconclusiveIf("Could not request publication reports from RTI." + e.getMessage());
+        }
+
         // ETR00002: SuT shall publish the NETN-SMC BaseEntity.SupportedActions attribute.
         // ETR00015: SuT shall update the NETN-SMC BaseEntity.SupportedActions attribute to include the list of currently supported tasks.
         // comment to ETR00015: the list must be stated in the CS
@@ -202,7 +217,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
                 logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca, MoveTaskProgressStruct.class));
                 // ETR00007: SuT shall publish all NETN-ETR ETR_Report interaction subclasses as declared in CS.
-                if (!baseModel.testInteractionPublication(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00007");
+                if (!baseModel.geMoMsupport().testInteractionPublication(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00007");
                 // only as a sematic test if SuT sends any reports
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());

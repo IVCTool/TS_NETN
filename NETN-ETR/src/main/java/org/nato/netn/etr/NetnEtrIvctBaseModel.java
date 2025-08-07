@@ -15,10 +15,7 @@ import org.nato.ivct.OmtEncodingHelpers.Core.HLAroot;
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
 import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAhandle;
 import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAhandleList;
-import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAinteractionRoot;
 import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAreportInteractionPublication;
-import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLArequestPublications;
-import org.nato.ivct.OmtEncodingHelpers.Core.objects.HLAfederate;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.ArrayOfUuidStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
@@ -94,10 +91,10 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     private List<SMC_Response> responses = new CopyOnWriteArrayList<>();
     private List<ObservationReport> reports = new CopyOnWriteArrayList<>();
     private List<PositionStatusReport> positions = new CopyOnWriteArrayList<>();
-    private List<String> publishedInteractions = new CopyOnWriteArrayList<>();
     private ExecutorService executorService = Executors.newCachedThreadPool();
     private BaseEntity subscribedAttributes;
     private BlockingSupport bs = null;
+    private MOMsupport ms = new MOMsupport();
 
     public NetnEtrIvctBaseModel(Logger logger, IVCT_TcParam ivct_TcParam) throws TcInconclusive {
         super(logger, ivct_TcParam);
@@ -106,22 +103,8 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         BaseEntity.initialize(ivct_rti);
     }
 
-    private void subscribeHLAreports() throws TcInconclusive {
-        try {
-            HLAfederate.addSub(HLAfederate.Attributes.HLAfederateHandle);
-            HLAfederate.addSub(HLAfederate.Attributes.HLAfederateName);
-            HLAfederate.addSub(HLAfederate.Attributes.HLAfederateType);
-            HLAfederate.addSub(HLAfederate.Attributes.HLAfederateHost);
-            HLAfederate.addSub(HLAfederate.Attributes.HLARTIversion);
-            HLAfederate.sub();
-            (new HLAreportInteractionPublication()).subscribe();
-
-            HLArequestPublications reqPublications = new HLArequestPublications();
-            reqPublications.publish();                 
-        } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
-                | OmtEncodingHelperException | AttributeNotDefined | ObjectClassNotDefined | SaveInProgress | RestoreInProgress | FederateServiceInvocationsAreBeingReportedViaMOM | InteractionClassNotDefined e) {
-            throw new TcInconclusive("Could not pub/sub for HLAreports" + e.getMessage());
-        }
+    public MOMsupport geMoMsupport() {
+        return ms;
     }
 
     public void registerPubSub(FederateHandle fh) throws TcInconclusive {
@@ -131,7 +114,14 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         subscribedAttributes = subscribeAttributes();
         publishInteractions();
         subscribeInteractions();
-        subscribeHLAreports();
+        try {
+            MOMsupport.subscribeHLAreports();
+        } catch (FederateServiceInvocationsAreBeingReportedViaMOM | InteractionClassNotDefined | SaveInProgress
+                | RestoreInProgress | FederateNotExecutionMember | NotConnected | RTIinternalError | NameNotFound
+                | InvalidObjectClassHandle | AttributeNotDefined | ObjectClassNotDefined
+                | OmtEncodingHelperException e) {
+            throw new TcInconclusive("Could not pub/sub for HLAreports" + e.getMessage());
+        }
     }
 
     public void addTaskStatus(UUIDStruct us, TaskStatusEnum32 tse) throws NameNotFound, FederateNotExecutionMember, NotConnected, RTIinternalError, OmtEncodingHelperException {
@@ -242,7 +232,7 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
     private void process(HLAhandle h) {
         String si = getHLAinteractionClassName(h);
         logger.info("Federate published interaction " + si);
-        publishedInteractions.add(si);
+        ms.addPublishedInteraction(si);
     }
 
     // callback section
@@ -654,9 +644,4 @@ public class NetnEtrIvctBaseModel extends IVCT_BaseModel {
         terminateRti();
         executorService.shutdown();
     }
-
-    public boolean testInteractionPublication(HLAinteractionRoot ia, List<String> subInteractions) {
-        String base = ia.getHlaClassName();
-        return subInteractions.stream().allMatch(si -> publishedInteractions.stream().anyMatch(s -> s.equals(base + "." + si)));
-    }    
 }

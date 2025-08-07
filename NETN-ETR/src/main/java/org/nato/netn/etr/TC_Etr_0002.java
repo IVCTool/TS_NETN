@@ -9,11 +9,7 @@ import java.util.Arrays;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.nato.ivct.OmtEncodingHelpers.Core.HLAroot;
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
-import org.nato.ivct.OmtEncodingHelpers.Core.datatypes.HLAhandle;
-import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLArequestPublications;
-import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLArequestSubscriptions;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_Report;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_TaskStatus;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.Task;
@@ -127,29 +123,12 @@ public class TC_Etr_0002 extends AbstractTestCase {
 
     @Override
     protected void performTest(Logger logger) throws TcInconclusiveIf, TcFailedIf {
-        FederateHandle fh = null;
-        String fn = netnTcParam.getSutFederateName();
-        try {
-            fh = HLAroot.getRtiAmbassador().getFederateHandle(fn);
-        } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
-                | OmtEncodingHelperException e) {
-            throw new TcInconclusiveIf("Could not retrieve federate handle for " + fn);
-        }
 
-        byte [] fha = new byte [4];
-        fh.encode(fha, 0);
         try {
-            HLAhandle hh = new HLAhandle();
-            for (int i = 0; i < fha.length; i++) {
-                hh.addElement(HLAroot.getEncoderFactory().createHLAbyte(fha[i]));
-            }
+            //
+            MOMsupport.requestPublicationReportsFromFederate(getSutFederateName());
+            MOMsupport.requestSubscriptionReportsFromFederate(getSutFederateName());
 
-            HLArequestPublications reqPublications = new HLArequestPublications();
-            reqPublications.setHLAfederate(hh.toByteArray());
-            reqPublications.send();
-            HLArequestSubscriptions reqSubscriptions = new HLArequestSubscriptions();
-            reqSubscriptions.setHLAfederate(hh.toByteArray());
-            reqSubscriptions.send();
             // publish object class and attributes we will send later on
             BaseEntity be = new BaseEntity();
             be.publishSupportedActions();
@@ -168,14 +147,15 @@ public class TC_Etr_0002 extends AbstractTestCase {
         }
         //
         try {
+            MOMsupport ms = baseModel.geMoMsupport();
             // ETR00006: SuT shall publish all NETN-ETR SMC_EntityControl.Task interaction subclasses corresponding to the supported NETN-SMC EntityControlActions as declared in CS.
-            if (!baseModel.testInteractionPublication(new Task(), Arrays.asList("MoveByRoute", "MoveToLocation")))throw new TcFailed("ETR00006");
+            if (!ms.testInteractionPublication(new Task(), Arrays.asList("MoveByRoute", "MoveToLocation")))throw new TcFailed("ETR00006");
             // ETR00012: SuT shall subscribe to the NETN-SMC SMC_Response interaction class.
-            if (!baseModel.testInteractionSubscription(new SMC_Response())) throw new TcFailed("ETR00012");
+            if (!ms.testInteractionSubscription(new SMC_Response())) throw new TcFailed("ETR00012");
             // ETR00013: SuT shall subscribe to the NETN-ETR ETR_TaskStatus interaction class.
-            if (!baseModel.testInteractionSubscription(new ETR_TaskStatus())) throw new TcFailed("ETR00013");
+            if (!ms.testInteractionSubscription(new ETR_TaskStatus())) throw new TcFailed("ETR00013");
             // ETR00014: SuT shall subscribe to all NETN-ETR ETR_Report interaction subclasses as declared in CS.
-            if (!baseModel.testInteractionSubscription(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00014");
+            if (!ms.testInteractionSubscription(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00014");
             // ETR00011: SuT shall subscribe to the NETN-SMC BaseEntity.SupportedActions attribute.
             if (!baseModel.testSubscribedAttribute("SupportedActions")) throw new TcFailed("ETR00011");
             // ETR00020: SuT shall only send NETN-ETR SMC_EntityControl.Task to an entity with a NETN-SMC BaseEntity.SupportedActions attribtue value that includes the corresponding task entity control action.

@@ -1,0 +1,90 @@
+{
+    "id": "NETN-ETR-4.0",
+    "version": "0.1",
+    "name": "NETN-ETR-4.0",
+    "description": "ETR Interoperability Capability Badge",
+    "graphics": "NETN-ETR-4.0.png",
+    "dependency": [],
+    "requirements": [
+        {
+            "id": "ETR00001",
+            "description": "SuT shall comply with all requirements associated with the NETN CB"
+        },
+        {
+            "id": "ETR00002",
+            "description": "SuT shall publish the NETN-SMC BaseEntity.SupportedActions attribute."
+        },
+        {
+            "id": "ETR00003",
+            "description": "SuT shall publish the NETN-SMC SMC_Response interaction class."
+        },
+        {
+            "id": "ETR00004",
+            "description": "SuT shall publish the NETN-ETR ETR_TaskStatus interaction class."
+        },
+        {
+            "id": "ETR00005",
+            "description": "SuT shall publish NETN-ETR BaseEntity attributes PlannedTasks, CurrentTasks and TaskProgress."
+        },
+        {
+            "id": "ETR00006",
+            "description": "SuT shall publish all NETN-ETR SMC_EntityControl.Task interaction subclasses corresponding to the supported NETN-SMC EntityControlActions as declared in CS."
+        },
+        {
+            "id": "ETR00007",
+            "description": "SuT shall publish all NETN-ETR ETR_Report interaction subclasses as declared in CS."
+        },
+        {
+            "id": "ETR00008",
+            "description": "SuT shall subscribe to all NETN-ETR SMC_EntityControl.Task interaction subclasses corresponding to the supported NETN-SMC EntityControlActions as declared in CS."
+        },
+        {
+            "id": "ETR00009",
+            "description": "SuT shall subscribe to NETN-ETR SMC_EntityControl.RequestTaskStatus interaction class."
+        },
+        {
+            "id": "ETR00010",
+            "description": "SuT shall subscribe to NETN-ETR SMC_EntityControl.CancelTasks interaction class."
+        },
+        {
+            "id": "ETR00011",
+            "description": "SuT shall subscribe to the NETN-SMC BaseEntity.SupportedActions attribute."
+        },
+        {
+            "id": "ETR00012",
+            "description": "SuT shall subscribe to the NETN-SMC SMC_Response interaction class."
+        },
+        {
+            "id": "ETR00013",
+            "description": "SuT shall subscribe to the NETN-ETR ETR_TaskStatus interaction class."
+        },
+        {
+            "id": "ETR00014",
+            "description": "SuT shall subscribe to all NETN-ETR ETR_Report interaction subclasses as declared in CS."
+        },
+        {
+            "id": "ETR00015",
+            "description": "SuT shall update the NETN-SMC BaseEntity.SupportedActions attribute to include the list of currently supported tasks."
+        },
+        {
+            "id": "ETR00016",
+            "description": "SuT shall respond to NETN-ETR SMC_EntityControl.Task interaction with a NETN-SMC SMC_Response with a status indicating success (accepting a task request) or failure (request not accepted)."
+        },
+        {
+            "id": "ETR00017",
+            "description": "SuT accepting a task request shall send NETN-ETR ETR_TaskStatus interactions to indicate changes in task execution status."
+        },
+        {
+            "id": "ETR00018",
+            "description": "SuT accepting a task request shall respond to NETN-ETR SMC_EntityControl.RequestTaskStatus interaction by sending a NETN-ETR ETR_TaskStatus interaction with the latest execution status."
+        },
+        {
+            "id": "ETR00019",
+            "description": "SuT accepting a task request shall update the NETN-ETR BaseEntity attributes PlannedTasks, CurrentTasks and TaskProgress to reflect current task status."
+        },
+        {
+            "id": "ETR00020",
+            "description": "SuT shall only send NETN-ETR SMC_EntityControl.Task to an entity with a NETN-SMC BaseEntity.SupportedActions attribtue value that includes the corresponding task entity control action."
+        }
+    ]
+}

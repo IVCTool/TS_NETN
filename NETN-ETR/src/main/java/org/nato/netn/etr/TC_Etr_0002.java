@@ -42,6 +42,13 @@ import hla.rti1516e.exceptions.RTIinternalError;
 import hla.rti1516e.exceptions.RestoreInProgress;
 import hla.rti1516e.exceptions.SaveInProgress;
 
+/**
+ * Test case implementation for the ETR Capability Badge - SuT in task receiver role
+ * <p>For test coverage see <a href="https://github.com/IVCTool/TS_NETN/blob/b1817c4e16487b654d72debc9d8884357b46c5a8/NETN-ETR/src/main/resources/NetnEtrTestSuite.json">Test coverage</a></p>
+ * <p>and for IR descriptions
+ * see <a href="https://github.com/IVCTool/TS_NETN/blob/b1817c4e16487b654d72debc9d8884357b46c5a8/NETN-ETR/src/main/resources/NetnEtrTestSuite.json">List of IRs for ETR</a>
+ * </p>
+ */
 public class TC_Etr_0002 extends AbstractTestCase {
     private NetnEtrIvctBaseModel2 baseModel = null;
     private FederateHandle federateHandle;
@@ -148,17 +155,17 @@ public class TC_Etr_0002 extends AbstractTestCase {
         //
         try {
             MOMsupport ms = baseModel.geMoMsupport();
-            // ETR00006: SuT shall publish all NETN-ETR SMC_EntityControl.Task interaction subclasses corresponding to the supported NETN-SMC EntityControlActions as declared in CS.
+            // ETR00006
             if (!ms.testInteractionPublication(new Task(), Arrays.asList("MoveByRoute", "MoveToLocation")))throw new TcFailed("ETR00006");
-            // ETR00012: SuT shall subscribe to the NETN-SMC SMC_Response interaction class.
+            // ETR00012
             if (!ms.testInteractionSubscription(new SMC_Response())) throw new TcFailed("ETR00012");
-            // ETR00013: SuT shall subscribe to the NETN-ETR ETR_TaskStatus interaction class.
+            // ETR00013
             if (!ms.testInteractionSubscription(new ETR_TaskStatus())) throw new TcFailed("ETR00013");
-            // ETR00014: SuT shall subscribe to all NETN-ETR ETR_Report interaction subclasses as declared in CS.
+            // ETR00014
             if (!ms.testInteractionSubscription(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00014");
-            // ETR00011: SuT shall subscribe to the NETN-SMC BaseEntity.SupportedActions attribute.
+            // ETR00011
             if (!baseModel.testSubscribedAttribute("SupportedActions")) throw new TcFailed("ETR00011");
-            // ETR00020: SuT shall only send NETN-ETR SMC_EntityControl.Task to an entity with a NETN-SMC BaseEntity.SupportedActions attribtue value that includes the corresponding task entity control action.
+            // ETR00020
             baseModel.waitForTasksWithCount(1);
             if (!baseModel.testTaskSupported()) throw new TcFailed("ETR00020");
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError

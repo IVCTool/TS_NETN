@@ -47,6 +47,13 @@ import hla.rti1516e.exceptions.RTIinternalError;
 import hla.rti1516e.exceptions.RestoreInProgress;
 import hla.rti1516e.exceptions.SaveInProgress;
 
+/**
+ * Test case implementation for the ETR Capability Badge - SuT in task receiver role
+ * <p>For test coverage see <a href="https://github.com/IVCTool/TS_NETN/blob/b1817c4e16487b654d72debc9d8884357b46c5a8/NETN-ETR/src/main/resources/NetnEtrTestSuite.json">Test coverage</a></p>
+ * <p>and for IR descriptions
+ * see <a href="https://github.com/IVCTool/TS_NETN/blob/b1817c4e16487b654d72debc9d8884357b46c5a8/NETN-ETR/src/main/resources/NetnEtrTestSuite.json">List of IRs for ETR</a>
+ * </p>
+ */
 public class TC_Etr_0001 extends AbstractTestCase {
 
     private NetnEtrIvctBaseModel baseModel = null;
@@ -149,9 +156,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
             throw new TcInconclusiveIf("Could not request publication reports from RTI." + e.getMessage());
         }
 
-        // ETR00002: SuT shall publish the NETN-SMC BaseEntity.SupportedActions attribute.
-        // ETR00015: SuT shall update the NETN-SMC BaseEntity.SupportedActions attribute to include the list of currently supported tasks.
-        // comment to ETR00015: the list must be stated in the CS
+        // ETR00002, ETR00015
         String [] sa = netnTcParam.getSupportedActions();
         EntityControlActionEnum32 eca = EntityControlActionEnum32.valueOf(sa[0]);
         logger.info("Test step - test SuT if it supports " + sa[0]);
@@ -177,19 +182,14 @@ public class TC_Etr_0001 extends AbstractTestCase {
             logger.info("Send MoveByRoute task with id " + taskId + " to " + be.getUniqueId());
             MoveByRoute mbr = baseModel.createTask(netnTcParam.getWaypoints(), netnTcParam.getSpeed());
             UUIDStruct interactionId = baseModel.sendTask(mbr, be, us);
-            // ETR00003: SuT shall publish the NETN-SMC SMC_Response interaction class.
-            // ETR00016: SuT shall respond to NETN-ETR SMC_EntityControl.Task interaction with a 
-            // NETN-SMC SMC_Response with a status indicating success (accepting a task request) or 
-            // failure (request not accepted).
-
+            
+            // ETR00003, ETR00016
             if (!selfTest) baseModel.waitForSMC_Responses();
             boolean accepted = (selfTest) ? true : baseModel.testSMC_Response(interactionId);
             logger.info("SuT responded to task with taskId " + taskId + ": " + accepted);
             
             if (accepted) {
-                // ETR00004: SuT shall publish the NETN-ETR ETR_TaskStatus interaction class.
-                // ETR00017: SuT accepting a task request shall send NETN-ETR ETR_TaskStatus interactions to 
-                // indicate changes in task execution status.
+                // ETR00004, ETR00017
                 if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Accepted);
                 baseModel.waitForETR_TaskStatus(us, TaskStatusEnum32.Accepted);
                 logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Accepted);
@@ -201,29 +201,26 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 logger.info(baseModel.toString(be.getEntityType()));
                 logger.info(baseModel.toString(be.getEntityIdentifier()));
                 logger.info(baseModel.toString(be.getSpatial()));
-                // ETR00009: SuT shall subscribe to NETN-ETR SMC_EntityControl.RequestTaskStatus interaction class.
-                // ETR00018: SuT accepting a task request shall respond to NETN-ETR SMC_EntityControl.RequestTaskStatus 
-                // interaction by sending a NETN-ETR ETR_TaskStatus interaction with the latest execution status.
-                // RequestTaskStatus not yet supported by Pitch Actors, so don't wait for a reply
+                // ETR00009, ETR00018
                 RequestTaskStatus rts = baseModel.createRequestTaskStatus(us, be);
                 UUIDStruct uid = baseModel.sendSMCControl(rts, be);
                 logger.info("RequestTaskStatus sent to BaseEntity " + be.getUniqueId() + " for taskId " + taskId);
                 // if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Executing);
                 // baseModel.waitForETR_TaskStatusWithCount(us, TaskStatusEnum32.Executing, 2);
                 // logger.info("Status from task with id " + taskId + " is " + TaskStatusEnum32.Executing);
-                // ETR00005: SuT shall publish NETN-ETR BaseEntity attributes PlannedTasks, CurrentTasks and TaskProgress.
-                // ETR00019: SuT accepting a task request shall update the NETN-ETR BaseEntity attributes PlannedTasks, 
-                // CurrentTasks and TaskProgress to reflect current task status.
+                
+                // ETR00005, ETR00019
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
                 logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca, MoveTaskProgressStruct.class));
-                // ETR00007: SuT shall publish all NETN-ETR ETR_Report interaction subclasses as declared in CS.
+                
+                // ETR00007
                 if (!baseModel.geMoMsupport().testInteractionPublication(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00007");
                 // only as a sematic test if SuT sends any reports
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());
                 
                 if (cancelTask) {
-                    // ETR00010: SuT shall subscribe to NETN-ETR SMC_EntityControl.CancelTasks interaction class.
+                    // ETR00010
                     CancelTasks ct = baseModel.createCancelTasks(us, be);
                     uid = baseModel.sendSMCControl(ct, be);
                     if (selfTest) baseModel.addTaskStatus(us, TaskStatusEnum32.Cancelled);

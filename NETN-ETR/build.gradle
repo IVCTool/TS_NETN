@@ -5,4 +5,10 @@ plugins {
 
 test {
     testLogging.showStandardStreams = false
+    useJUnitPlatform {
+        includeTags("Pitis")
+        // excludeTags("slow", "ci")
+        // includeEngines("junit-jupiter")
+        // excludeEngines("junit-vintage")
+    }        
 }

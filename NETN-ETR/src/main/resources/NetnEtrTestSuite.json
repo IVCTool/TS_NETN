@@ -8,9 +8,34 @@
     "testcases": [
         {
             "TC": "org.nato.netn.etr.TC_ETR_0001",
-            "IR": ["NETN-ETR-0001"],
-            "description": "Abstract test case description"
-        }
+            "IR": [
+                "ETR00002", 
+                "ETR00003", 
+                "ETR00004", 
+                "ETR00005", 
+                "ETR00007", 
+                "ETR00009", 
+                "ETR00010", 
+                "ETR00015", 
+                "ETR00016", 
+                "ETR00017",
+                "ETR00018",
+                "ETR00019"
+            ],
+            "description": "Test Case for the ETR Interoperability Capability Badge: SuT in task receiver role"
+        },
+        {
+            "TC": "org.nato.netn.etr.TC_ETR_0002",
+            "IR": [
+                "ETR00006", 
+                "ETR00011", 
+                "ETR00012", 
+                "ETR00013", 
+                "ETR00014",
+                "ETR00020"
+            ],
+            "description": "Test Case for the ETR Interoperability Capability Badge: SuT in tasker role"
+        }        
     ],
 	"parameters":[
 		{

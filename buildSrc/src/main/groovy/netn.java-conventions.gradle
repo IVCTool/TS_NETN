@@ -30,6 +30,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.10'
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
 	implementation files("$System.env.LRC_CLASSPATH")
+    implementation 'edu.nps.moves:open-dis:5.9'
 
     // For testing include the libraries which are added by TestEngine in operation
     testImplementation 'io.github.msg134:TC.lib:4.1.0-SNAPSHOT'

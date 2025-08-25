@@ -24,7 +24,7 @@ public class NetnOrgTestSuiteTest {
     @Test 
     void testTestCaseLoader() throws FileNotFoundException, IOException, ParseException {
         log.trace("ServiceLoader test");
-        NetnUnitTestSuite ts = new NetnUnitTestSuite();
+        NetnOrgTestSuite ts = new NetnOrgTestSuite();
         AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.org.TC_Org_0001");
         assertNotNull(tc);
     }

@@ -1,8 +1,10 @@
 {
-    "federationName" : "DirksFederation",
-    "sutFederateName" : "SutFederate1",
+    "federationName" : "NETN4",
+    "sutFederateName" : "Pitch Actors",
     "supportedActions" : ["MoveByRoute"],
     "taskId" : "77e004e5-a3b3-43be-b655-0f9167ec051b",
-    "speed" : 12,
-    "route" : [{"x": 11.649, "y" : 48.066}, {"x" : 11.642, "y" : 48.0684}]
+    "speed" : 88,
+    "route" : [{"x": 58.38580, "y" : 15.55502}, {"x" : 58.37753, "y" : 15.56698}],
+    "selfTest" : false,
+    "cancelTask" : false
 }

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ServiceLoader;
 
 import org.json.simple.parser.ParseException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import de.fraunhofer.iosb.tc_lib_if.AbstractTestCaseIf;
 import de.fraunhofer.iosb.tc_lib_if.IVCT_Verdict;
@@ -42,11 +43,25 @@ public class NetnEtrTestSuiteTest {
     }
 
     @Test
-    void test() throws FileNotFoundException, IOException, ParseException {
+    void testLocalhost() throws FileNotFoundException, IOException, ParseException {
         log.trace("Main test");
         NetnEtrTestSuite ts = new NetnEtrTestSuite();
         AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.etr.TC_Etr_0001");
         assertNotNull(tc);       
+        tc.setSettingsDesignator("crcAddress=localhost:8989");
+        IVCT_Verdict verdict = tc.execute(log);
+        log.info("Test Case Verdict: {}", verdict);
+        assertTrue(verdict.verdict == IVCT_Verdict.Verdict.PASSED);
+    }
+
+    @Test
+    @Tag("Pitis")
+    void testPITIS223() throws FileNotFoundException, IOException, ParseException {
+        log.trace("Main test");
+        NetnEtrTestSuite ts = new NetnEtrTestSuite();
+        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.etr.TC_Etr_0001");
+        assertNotNull(tc);       
+        tc.setSettingsDesignator("crcAddress=crc.PITIS-223@localhost:8688");
         IVCT_Verdict verdict = tc.execute(log);
         log.info("Test Case Verdict: {}", verdict);
         assertTrue(verdict.verdict == IVCT_Verdict.Verdict.PASSED);

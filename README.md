@@ -2,7 +2,7 @@
 
 This repository will be used for the development of the NETN Test Suite. Currently it contains ETR test cases for SuT in tasker and task receiver roles.
 
-![NETN Badge](docs/src/NETN-4.0.png)
+![NETN Badge](docs/src/NETN.png)
 
 ## IVCT Compliance
 
@@ -17,7 +17,7 @@ See also https://github.com/AMSP-04/NETN-FOM
 
 The test suites modules are aligned to the badge structure. 
 
-![Badges](docs/src/badge-dependencies.png)
+![Badges](docs/src/NETN-dependencies.png)
 
 ## Testing with Booster
 

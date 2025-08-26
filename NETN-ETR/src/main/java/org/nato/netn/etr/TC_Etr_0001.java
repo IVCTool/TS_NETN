@@ -24,7 +24,6 @@ import org.json.simple.parser.ParseException;
 import org.nato.ivct.OmtEncodingHelpers.Core.OmtEncodingHelperException;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
-import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.CancelTasks;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.interactions.ETR_Report;
@@ -101,6 +100,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
         baseModel.setSutFederateName(netnTcParam.getSutFederateName());
         baseModel.setFederationName(netnTcParam.getFederationName());
         this.setFederationName(netnTcParam.getFederationName());
+        this.setSutFederateName(netnTcParam.getSutFederateName());
         selfTest = netnTcParam.getSelfTest();
         cancelTask = netnTcParam.getCancelTask();
         ivct_LoggingFederateAmbassador = new IVCT_LoggingFederateAmbassador(baseModel, logger);
@@ -148,7 +148,7 @@ public class TC_Etr_0001 extends AbstractTestCase {
         }
         
         try {
-            MOMsupport.requestPublicationReportsFromFederate(getSutFederateName());
+            if (!selfTest) MOMsupport.requestPublicationReportsFromFederate(getSutFederateName());
         } catch (NameNotFound | FederateNotExecutionMember | NotConnected | RTIinternalError
                 | InvalidInteractionClassHandle | EncoderException | InteractionClassNotPublished
                 | InteractionParameterNotDefined | InteractionClassNotDefined | SaveInProgress | RestoreInProgress
@@ -171,6 +171,17 @@ public class TC_Etr_0001 extends AbstractTestCase {
             List<BaseEntity> baseEntitiesFromSuT_SA = baseModel.waitForSupportedActions(eca);
             // take the first one (it definitely exists) and task it
             be = baseEntitiesFromSuT_SA.get(0);
+        } else {
+            try {
+                be = new BaseEntity();
+                UUIDStruct usi = new UUIDStruct();
+                be.setUniqueId(usi);
+            } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected
+                    | RTIinternalError | EncoderException | OmtEncodingHelperException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            
         }
 
         // test for task id, which is used to task entities of SuT
@@ -211,10 +222,10 @@ public class TC_Etr_0001 extends AbstractTestCase {
                 
                 // ETR00005, ETR00019
                 logger.info("Task with id " + taskId + " is in the current tasks list: " + baseModel.testCurrentTasks(be, us));
-                logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca, MoveTaskProgressStruct.class));
+                logger.info("Task progress for task id " + taskId + " found: " + baseModel.testTaskProgress(be, us, eca));
                 
                 // ETR00007
-                if (!baseModel.geMoMsupport().testInteractionPublication(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00007");
+                if (!selfTest && !baseModel.geMoMsupport().testInteractionPublication(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00007");
                 // only as a sematic test if SuT sends any reports
                 baseModel.waitForObservationReportsFromSuT();
                 logger.info("Reports so far: " + baseModel.getReportIds());

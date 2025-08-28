@@ -22,6 +22,8 @@ public class NetnEtrTcParam implements IVCT_TcParam {
     public static final String FEDERATION_NAME = "federationName";
     public static final String SUT_FEDERATE_NAME = "sutFederateName";
     public static final String SUT_SUPPRTED_ACTIONS = "supportedActions";
+    public static final String SUT_PUBLISHED_TASKS = "publishedTasks";
+    public static final String SUT_SUSCRIBED_REPORTS = "subscribedReports";
     public static final String SUT_TASK_ID = "taskId";
     public static final String ROUTE = "route";
     public static final String SPEED = "speed";
@@ -83,36 +85,53 @@ public class NetnEtrTcParam implements IVCT_TcParam {
         return fomFiles.get();
     }
 
-    public String getSutFederateName() throws TcInconclusive {
-        Object o = parameter.get(SUT_FEDERATE_NAME);
-        if (o == null) throw new TcInconclusive("Parameter " + SUT_FEDERATE_NAME + " not set.");
+    private String getString(String pn)  throws TcInconclusive {
+        Object o = parameter.get(pn);
+        if (o == null) throw new TcInconclusive("Parameter " + pn + " not set.");
         return (String)o;
     }
 
-    public String getFederationName() throws TcInconclusive {
-        Object o = parameter.get(FEDERATION_NAME);
+    private boolean getBoolean(String pn) throws TcInconclusive {
+        Object o = parameter.get(pn);
         if (o == null) {
-            throw new TcInconclusive("Parameter " + FEDERATION_NAME + " not set.");
-        }
-        return (String)o;
+            throw new TcInconclusive("Parameter " + pn + " not set.");
+        }        
+        return ((Boolean)o).booleanValue();
     }
 
-    public String [] getSupportedActions() throws TcInconclusive {
-        Object o = parameter.get(SUT_SUPPRTED_ACTIONS);
+    private String [] getSStringArray(String pn) throws TcInconclusive {
+        Object o = parameter.get(pn);
         if (o == null) {
-            throw new TcInconclusive("Parameter " + SUT_SUPPRTED_ACTIONS + " not set.");
+            throw new TcInconclusive("Parameter " + pn + " not set.");
         }
         JSONArray ja = (JSONArray)o;
         return Arrays.stream(ja.toArray()).map(t -> (String)t).toArray(String[]::new);
     }
 
-    public String getTaskId() throws TcInconclusive {
-        Object o = parameter.get(SUT_TASK_ID);
-        if (o == null) {
-            throw new TcInconclusive("Parameter " + SUT_TASK_ID + " not set.");
-        }
-        return (String)o;        
+    public String getSutFederateName() throws TcInconclusive {
+        return getString(SUT_FEDERATE_NAME);
     }
+
+    public String getFederationName() throws TcInconclusive {
+        return getString(FEDERATION_NAME);
+    }
+
+    public String [] getSupportedActions() throws TcInconclusive {
+        return getSStringArray(SUT_SUPPRTED_ACTIONS);
+    }
+
+    public String [] getPublishedTasks() throws TcInconclusive {
+        return getSStringArray(SUT_PUBLISHED_TASKS);
+    }
+
+    public String [] getSubscribedReports() throws TcInconclusive {
+        return getSStringArray(SUT_SUSCRIBED_REPORTS);
+    }
+
+    public String getTaskId() throws TcInconclusive {
+        return getString(SUT_TASK_ID);
+    }
+
     public float getSpeed() throws TcInconclusive {
         Object o = parameter.get(SPEED);
         if (o == null) {
@@ -136,18 +155,10 @@ public class NetnEtrTcParam implements IVCT_TcParam {
     }
 
     public boolean getSelfTest() throws TcInconclusive {
-        Object o = parameter.get(SELF_TEST);
-        if (o == null) {
-            throw new TcInconclusive("Parameter " + SELF_TEST + " not set.");
-        }        
-        return ((Boolean)o).booleanValue();
+        return getBoolean(SELF_TEST);
     }
 
     public boolean getCancelTask() throws TcInconclusive {
-        Object o = parameter.get(CANCEL_TASK);
-        if (o == null) {
-            throw new TcInconclusive("Parameter " + CANCEL_TASK + " not set.");
-        }        
-        return ((Boolean)o).booleanValue();
+        return getBoolean(CANCEL_TASK);
     }    
 }

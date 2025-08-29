@@ -2,7 +2,7 @@
 
 This repository will be used for the development of the NETN Test Suite. Currently it contains ETR test cases for SuT in tasker and task receiver roles.
 
-![NETN Badge](docs/src/NETN.png)
+![NETN Badge](docs/src/NETN-300px.png)
 
 ## IVCT Compliance
 

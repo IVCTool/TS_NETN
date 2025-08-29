@@ -1,4 +1,15 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.debug.settings.vmArgs": "-Xlog:jni+resolve=off",
+    "textmarker.savedHighlights": [
+        {
+            "pattern": {
+                "type": "regex",
+                "expression": "ETR[0-9]{5}",
+                "ignoreCase": false,
+                "wholeMatch": false
+            },
+            "color": "yellow"
+        }
+    ]
 }

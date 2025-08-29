@@ -43,7 +43,7 @@ import hla.rti1516e.exceptions.RestoreInProgress;
 import hla.rti1516e.exceptions.SaveInProgress;
 
 /**
- * Test case implementation for the ETR Capability Badge - SuT in task receiver role
+ * Test case implementation for the ETR Capability Badge - SuT in tasker role
  * <p>For test coverage see <a href="https://github.com/IVCTool/TS_NETN/blob/b1817c4e16487b654d72debc9d8884357b46c5a8/NETN-ETR/src/main/resources/NetnEtrTestSuite.json">Test coverage</a></p>
  * <p>and for IR descriptions
  * see <a href="https://github.com/IVCTool/TS_NETN/blob/b1817c4e16487b654d72debc9d8884357b46c5a8/NETN-ETR/src/main/resources/NetnEtrTestSuite.json">List of IRs for ETR</a>
@@ -92,6 +92,7 @@ public class TC_Etr_0002 extends AbstractTestCase {
         baseModel.setSutFederateName(netnTcParam.getSutFederateName());
         baseModel.setFederationName(netnTcParam.getFederationName());
         this.setFederationName(netnTcParam.getFederationName());
+        this.setSutFederateName(netnTcParam.getSutFederateName());
         ivct_LoggingFederateAmbassador = new IVCT_LoggingFederateAmbassador(baseModel, logger);
 
         return baseModel;
@@ -156,13 +157,13 @@ public class TC_Etr_0002 extends AbstractTestCase {
         try {
             MOMsupport ms = baseModel.geMoMsupport();
             // ETR00006
-            if (!ms.testInteractionPublication(new Task(), Arrays.asList("MoveByRoute", "MoveToLocation")))throw new TcFailed("ETR00006");
+            if (!ms.testInteractionPublication(new Task(), Arrays.asList(netnTcParam.getPublishedTasks())))throw new TcFailed("ETR00006");
             // ETR00012
             if (!ms.testInteractionSubscription(new SMC_Response())) throw new TcFailed("ETR00012");
             // ETR00013
             if (!ms.testInteractionSubscription(new ETR_TaskStatus())) throw new TcFailed("ETR00013");
             // ETR00014
-            if (!ms.testInteractionSubscription(new ETR_Report(), Arrays.asList("ObservationReport", "PositionStatusReport"))) throw new TcFailed("ETR00014");
+            if (!ms.testInteractionSubscription(new ETR_Report(), Arrays.asList(netnTcParam.getSubscribedReports()))) throw new TcFailed("ETR00014");
             // ETR00011
             if (!baseModel.testSubscribedAttribute("SupportedActions")) throw new TcFailed("ETR00011");
             // ETR00020

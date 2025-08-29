@@ -19,9 +19,12 @@ import org.nato.ivct.OmtEncodingHelpers.Core.interactions.HLAreportInteractionPu
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.objects.BaseEntity;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.ArrayOfUuidStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Base.datatypes.UUIDStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.ElapsedTimeProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.EntityControlActionEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.FireTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveByRouteTaskStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.MoveTaskProgressStruct;
+import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.PatrolTaskProgressStruct;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskProgressVariantRecord;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.TaskStatusEnum32;
 import org.nato.ivct.OmtEncodingHelpers.Netn.Etr.datatypes.WaypointStruct;

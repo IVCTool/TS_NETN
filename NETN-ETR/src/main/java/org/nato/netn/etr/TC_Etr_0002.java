@@ -155,7 +155,7 @@ public class TC_Etr_0002 extends AbstractTestCase {
         }
         //
         try {
-            MOMsupport ms = baseModel.geMoMsupport();
+            MOMsupport ms = baseModel.getMoMsupport();
             // ETR00006
             if (!ms.testInteractionPublication(new Task(), Arrays.asList(netnTcParam.getPublishedTasks())))throw new TcFailed("ETR00006");
             // ETR00012

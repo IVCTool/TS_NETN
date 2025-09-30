@@ -93,7 +93,7 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
         }
     }
 
-    public MOMsupport geMoMsupport() {
+    public MOMsupport getMoMsupport() {
         return ms;
     }
 

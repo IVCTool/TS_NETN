@@ -61,7 +61,7 @@ public class NetnEtrTestSuiteTest {
         NetnEtrTestSuite ts = new NetnEtrTestSuite();
         AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.etr.TC_Etr_0001");
         assertNotNull(tc);       
-        tc.setSettingsDesignator("crcAddress=crc.PITIS-223@localhost:8688");
+        // tc.setSettingsDesignator("crcAddress=crc.PITIS-223@localhost:8688");
         IVCT_Verdict verdict = tc.execute(log);
         log.info("Test Case Verdict: {}", verdict);
         assertTrue(verdict.verdict == IVCT_Verdict.Verdict.PASSED);

@@ -27,7 +27,11 @@ public class NetnEtrTestSuite extends HlaTestSuite {
         if (testCaseId.equals(TC_Etr_0001.class.getName())) {
             log.trace("found it");
             return new TC_Etr_0001();
-        }
+        } else
+        if (testCaseId.equals(TC_Etr_0002.class.getName())) {
+            log.trace("found it");
+            return new TC_Etr_0002();
+        }        
         log.trace("nothing found");
         return null;
     }

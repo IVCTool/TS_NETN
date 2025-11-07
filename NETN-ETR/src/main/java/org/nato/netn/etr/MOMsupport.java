@@ -53,6 +53,7 @@ public class MOMsupport {
             InvalidInteractionClassHandle, EncoderException, InteractionClassNotPublished,
             InteractionParameterNotDefined, InteractionClassNotDefined, SaveInProgress, RestoreInProgress {
         HLArequestPublications reqPublications = new HLArequestPublications();
+        reqPublications.publish();
         reqPublications.setHLAfederate(getHandleFromSuT(fName).toByteArray());
         reqPublications.send();
     }
@@ -62,6 +63,7 @@ public class MOMsupport {
             InvalidInteractionClassHandle, EncoderException, InteractionClassNotPublished,
             InteractionParameterNotDefined, InteractionClassNotDefined, SaveInProgress, RestoreInProgress {
         HLArequestSubscriptions reqSubscriptions = new HLArequestSubscriptions();
+        reqSubscriptions.publish();
         reqSubscriptions.setHLAfederate(getHandleFromSuT(fName).toByteArray());
         reqSubscriptions.send();
     }

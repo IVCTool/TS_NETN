@@ -23,6 +23,19 @@ import org.slf4j.LoggerFactory;
 public class NetnEtrTestSuiteTest {
 
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(NetnEtrTestSuiteTest.class);
+    static final String local_designator = "crcAddress=localhost:8989";
+    static final String pitis_designator = "crcAddress=crc.PITIS-223@localhost:8688";
+    
+    private void ETR_test(String designator, String tc_name) throws FileNotFoundException, IOException, ParseException {
+        log.trace("Test: " + tc_name);
+        NetnEtrTestSuite ts = new NetnEtrTestSuite();
+        AbstractTestCaseIf tc = ts.getTestCase(tc_name);
+        assertNotNull(tc);       
+        tc.setSettingsDesignator(designator);
+        IVCT_Verdict verdict = tc.execute(log);
+        log.info("Test Case Verdict: {}", verdict);
+        assertTrue(verdict.verdict == IVCT_Verdict.Verdict.PASSED);
+    }
     
     @Test 
     void testTestCaseLoader() throws FileNotFoundException, IOException, ParseException {
@@ -43,27 +56,26 @@ public class NetnEtrTestSuiteTest {
     }
 
     @Test
-    void testLocalhost() throws FileNotFoundException, IOException, ParseException {
-        log.trace("Main test");
-        NetnEtrTestSuite ts = new NetnEtrTestSuite();
-        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.etr.TC_Etr_0001");
-        assertNotNull(tc);       
-        tc.setSettingsDesignator("crcAddress=localhost:8989");
-        IVCT_Verdict verdict = tc.execute(log);
-        log.info("Test Case Verdict: {}", verdict);
-        assertTrue(verdict.verdict == IVCT_Verdict.Verdict.PASSED);
+    @Tag("local")
+    void testETR_0001atLocalhost() throws FileNotFoundException, IOException, ParseException {
+        ETR_test(local_designator, "org.nato.netn.etr.TC_Etr_0001");
     }
 
     @Test
     @Tag("Pitis")
-    void testPITIS223() throws FileNotFoundException, IOException, ParseException {
-        log.trace("Main test");
-        NetnEtrTestSuite ts = new NetnEtrTestSuite();
-        AbstractTestCaseIf tc = ts.getTestCase("org.nato.netn.etr.TC_Etr_0001");
-        assertNotNull(tc);       
-        // tc.setSettingsDesignator("crcAddress=crc.PITIS-223@localhost:8688");
-        IVCT_Verdict verdict = tc.execute(log);
-        log.info("Test Case Verdict: {}", verdict);
-        assertTrue(verdict.verdict == IVCT_Verdict.Verdict.PASSED);
+    void testETR_0001atPITIS223() throws FileNotFoundException, IOException, ParseException {
+        ETR_test(pitis_designator, "org.nato.netn.etr.TC_Etr_0001");
     }
+
+    @Test
+    @Tag("local")
+    void testETR_0002atLocalhost() throws FileNotFoundException, IOException, ParseException {
+        ETR_test(local_designator, "org.nato.netn.etr.TC_Etr_0002");
+    }
+
+    @Test
+    @Tag("Pitis")
+    void testETR_0002atPITIS223() throws FileNotFoundException, IOException, ParseException {
+        ETR_test(pitis_designator, "org.nato.netn.etr.TC_Etr_0002");
+    }    
 }

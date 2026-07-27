@@ -84,19 +84,21 @@ public class NetnEtrIvctBaseModel2 extends IVCT_BaseModel {
         netParam = ivct_TcParam;
         this.logger = logger;
         bs = new BlockingSupport(executorService, 100, logger);
-        BaseEntity.initialize(ivct_rti);
-        try {
-            be = createBaseEntity(15.55502, 58.38580);
-        } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
-                | EncoderException | TcInconclusive | OmtEncodingHelperException | DecoderException e) {
-            throw new TcInconclusive("Could not create base entity.");
-        }
     }
 
     public MOMsupport getMoMsupport() {
         return ms;
     }
 
+    public void createBaseEntity() throws TcInconclusive {
+       BaseEntity.initialize(ivct_rti);
+        try {
+            be = createBaseEntity(15.55502, 58.38580);
+        } catch (NameNotFound | InvalidObjectClassHandle | FederateNotExecutionMember | NotConnected | RTIinternalError
+                | EncoderException | TcInconclusive | OmtEncodingHelperException | DecoderException e) {
+            throw new TcInconclusive("Could not create base entity.");
+        }                
+    }
     public void registerPubSub(FederateHandle fh) throws TcInconclusive {
         if (fh == null) {
             throw new TcInconclusive("Call initializeRTI first.");

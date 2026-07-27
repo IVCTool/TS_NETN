@@ -127,6 +127,7 @@ public class TC_Etr_0002 extends AbstractTestCase {
         logger.info("SUT federate: " + baseModel.getSutFederateName());
         federateHandle = baseModel.initiateRti(this.getClass().getSimpleName(), ivct_LoggingFederateAmbassador);
         baseModel.registerPubSub(federateHandle);
+        baseModel.createBaseEntity();;
     }
 
     @Override

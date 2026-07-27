@@ -6,9 +6,9 @@ plugins {
 test {
     testLogging.showStandardStreams = false
     useJUnitPlatform {
-        includeTags("Pitis")
+        // includeTags("Pitis", "local")
         // excludeTags("slow", "ci")
         // includeEngines("junit-jupiter")
-        // excludeEngines("junit-vintage")
-    }        
+        excludeEngines("junit-vintage")
+    }       
 }

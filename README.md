@@ -19,7 +19,7 @@ The test suites modules are aligned to the badge structure.
 
 ![Badges](docs/src/NETN-dependencies.png)
 
-## Testing with Booster
+## Testing with Booster or local RTI
 
 Booster Config for PITIS-223 Test Environment:
 - crc.PITIS-223@localhost:8688
@@ -32,6 +32,37 @@ These settings may be set via the SettingsDesignator setter of the test case obj
     tc.setSettingsDesignator("crcAddress=localhost:8989");
 
 or via the LRC.settings within the pRTI installation setup.
+
+## Testing without IVCT
+
+There is the possiblity to run the test cases on command line with gradle. There are two test cases ETR_0001 (SuT in role task receiver) and ETR_0002 (SuT in role tasker). To run a dedicated test case TC use the following command:
+
+./gradlew :NETN-ETR:test --tests "org.nato.netn.etr.NetnEtrTestSuiteTest.[TC]", where the method TC can be one of
+
+| TC | Description |
+| --- | --- |
+| testETR_0001atLocalhost | test case ETR_0001 with local RTI |
+| testETR_0001atPITIS223 | test case ETR_0001 with PITIS connection set |
+| testETR_0002atLocalhost | test case ETR_0002 with local RTI |
+| testETR_0002atPITIS223 | test case ETR_0002 with PITIS connection |
+
+## Test Case Configuration
+There is one single configuration file TcParam.json in NETN-ETR/src/main/resources for both test cases:
+
+```json
+{
+    "federationName" : "NETN4",
+    "sutFederateName" : "Pitch Actors",
+    "supportedActions" : ["MoveByRoute"],
+    "publishedTasks" : ["MoveByRoute", "MoveToLocation"],
+    "subscribedReports" : ["ObservationReport", "PositionStatusReport"],
+    "taskId" : "77e004e5-a3b3-43be-b655-0f9167ec051b",
+    "speed" : 88,
+    "route" : [{"x": 58.38580, "y" : 15.55502}, {"x" : 58.37753, "y" : 15.56698}],
+    "selfTest" : true,
+    "cancelTask" : false
+}
+```
 
 ## LICENCE
 

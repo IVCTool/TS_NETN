@@ -64,6 +64,20 @@ There is one single configuration file TcParam.json in NETN-ETR/src/main/resourc
 }
 ```
 
+The meaning of the parameters and which test case uses them is described in the following table:
+
+| Parameter | Used By | Description |
+| --- | ---- | --- |
+| federationName | ETR_0001,2 | the name of the federation |
+| sutFederateName | ETR_0001,2 |the name of the SuT to be tested |
+| supportedActions | ETR_0001,2 | the list of the actions supported by the SuT (1) or the entity to be tasked (2) according to the CS |
+| publishedTasks | ETR_0002 | the list of tasks the tasker should have published according to the CS |
+| subscribedReports | ETR_0002 | the list of report types the tasker should have subscribed according to the CS |
+| taskId | ETR_0001 | the task Id the tasker uses for the task sent to the SuT (task receiver) |
+| speed | ETR_0001 | the speed in m/s used for each waypoint in the WaypointStruct of the MoveByRoute task |
+| route | ETR_0001 | the list of waypoints used for the aypointStruct of the MoveByRoute task |
+| selfTest | ETR_0001 | a boolean value to control a sef test mode, in case of true the SuT is simply simulated |
+| cancelTask | ETR_0001 | a boolean value to control the use of the Cancel task (i.e. the task will not complete instead should break after receiving this task and answer with ETR_TaskStatus(Cancelled) |
 ## LICENCE
 
 Copyright 2025 NATO/OTAN
